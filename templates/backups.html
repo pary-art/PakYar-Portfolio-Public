@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}پشتیبان‌گیری سامانه | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">پشتیبان‌گیری سامانه</h2>
+            <p class="mb-0 opacity-75">نسخه‌های پشتیبان بانک اطلاعاتی و فایل‌های گزارش</p>
+        </div>
+        <form method="post" action="{{ url_for('main.create_manual_backup') }}">
+            <button class="btn btn-light" type="submit">
+                <i class="fa-solid fa-cloud-arrow-down ms-1"></i>
+                ایجاد پشتیبان فوری
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card page-card p-4 h-100">
+            <small class="text-muted">آخرین پشتیبان موفق</small>
+            {% if latest_backup %}
+                <h4 class="fw-bold text-success mt-2">{{ latest_backup.created_at|jalali }}</h4>
+                <p class="text-muted mb-0">{{ (latest_backup.size / 1024 / 1024)|round(2) }} مگابایت</p>
+            {% else %}
+                <h4 class="fw-bold text-warning mt-2">هنوز ایجاد نشده است</h4>
+                <p class="text-muted mb-0">پشتیبان خودکار پس از راه‌اندازی ایجاد می‌شود.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card page-card p-4 h-100">
+            <small class="text-muted">روش نگهداری</small>
+            <h4 class="fw-bold mt-2">روزانه و خودکار</h4>
+            <p class="text-muted mb-0">۳۰ نسخهٔ آخر نگهداری می‌شود و نسخه‌های قدیمی‌تر خودکار حذف می‌شوند.</p>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info rounded-4 border-0 shadow-sm">
+    <strong><i class="fa-solid fa-shield-halved ms-1"></i>بازیابی امن:</strong>
+    قبل از بازیابی، از نسخهٔ فعلی یک پشتیبان جدید بسازید. برای جلوگیری از خراب‌شدن اطلاعات، بازیابی کامل از طریق فایل
+    <code>restore_backup.py</code> و پس از خاموش‌کردن برنامه انجام می‌شود.
+</div>
+
+<div class="card page-card p-4">
+    <h5 class="fw-bold mb-3">نسخه‌های موجود</h5>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>نام فایل</th>
+                    <th>تاریخ ایجاد</th>
+                    <th>حجم</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in backups %}
+                    <tr>
+                        <td class="fw-bold">{{ backup.name }}</td>
+                        <td>{{ backup.created_at|jalali }}</td>
+                        <td>{{ (backup.size / 1024 / 1024)|round(2) }} مگابایت</td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.download_backup', filename=backup.name) }}">
+                                    <i class="fa-solid fa-download ms-1"></i>
+                                    دریافت
+                                </a>
+                                <form method="post" action="{{ url_for('main.validate_backup_file', filename=backup.name) }}">
+                                    <button class="btn btn-sm btn-outline-success" type="submit">
+                                        <i class="fa-solid fa-circle-check ms-1"></i>
+                                        بررسی سلامت
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-5">نسخهٔ پشتیبانی وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

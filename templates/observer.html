@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}داشبورد ناظر اداره‌کل{% endblock %}
+{% block content %}
+<div class="hero-box mb-4">
+  <h2 class="fw-bold mb-2">داشبورد ناظر اداره‌کل</h2>
+  <p class="mb-0 opacity-75">پایش سراسری روند کار؛ مسئول خدمات از این صفحه منصوب می‌شود و سایر اطلاعات فقط برای مشاهده هستند.</p>
+</div>
+<div class="card page-card p-4 mb-4" id="appoint-manager">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h5 class="fw-bold mb-1"><i class="fa-solid fa-user-tie ms-2 text-primary"></i>انتصاب مسئول خدمات</h5>
+      {% if appointed_manager %}
+        <p class="text-muted mb-0">مسئول خدمات فعلی: <strong class="text-dark">{{ appointed_manager.full_name }}</strong></p>
+      {% else %}
+        <p class="text-muted mb-0">هنوز مسئول خدماتی برای ادارهٔ سامانه منصوب نشده است.</p>
+      {% endif %}
+    </div>
+    {% if manager_candidates %}
+      <form class="d-flex flex-wrap gap-2" method="post" action="{{ url_for('main.appoint_manager') }}" onsubmit="return confirm('اگر فرد دیگری را انتخاب کنید، مسئول خدمات قبلی به نقش پرسنل برمی‌گردد و دسترسی بخش‌هایش برداشته می‌شود. سوابق ثبت‌شده حذف نمی‌شوند. ادامه می‌دهید؟');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="user_id" class="form-select" required aria-label="انتخاب مسئول خدمات" style="min-width:240px">
+          <option value="">انتخاب فرد موردنظر</option>
+          {% for candidate in manager_candidates %}
+            <option value="{{ candidate.id }}" {% if appointed_manager and appointed_manager.id == candidate.id %}selected{% endif %}>
+              {{ candidate.full_name }} · {{ role_label(candidate.role) }}
+            </option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-user-check ms-1"></i>ثبت انتصاب</button>
+      </form>
+    {% else %}
+      <span class="text-muted">حساب فعال قابل انتصابی وجود ندارد.</span>
+    {% endif %}
+  </div>
+  <div class="small text-muted mt-3">مسئول خدمات پس از این انتصاب، پرسنل و مسئولان بخش را طبق روال سامانه مدیریت می‌کند. ناظر اداره‌کل فقط گزارش‌ها، آمار و روند کار را می‌بیند.</div>
+</div>
+<div class="card page-card p-4 mb-4">
+  <form class="row g-3 align-items-end" method="get">
+    <div class="col-md-3"><label class="form-label">ماه شمسی</label><input name="jalali_month" class="form-control" value="{{ selected_month }}" placeholder="۱۴۰۵/۰۶"></div>
+    <div class="col-md-3"><label class="form-label">بخش</label><select name="section_id" class="form-select"><option value="">همهٔ بخش‌ها</option>{% for section in sections %}<option value="{{ section.id }}" {% if selected_section_id == section.id %}selected{% endif %}>{{ section.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label">شیفت</label><select name="shift" class="form-select"><option value="">همهٔ شیفت‌ها</option>{% for shift in ('صبح','عصر','شب') %}<option {% if selected_shift == shift %}selected{% endif %}>{{ shift }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><button class="btn btn-primary w-100">اعمال فیلتر</button></div>
+  </form>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="stat-card"><h6>کل ثبت‌ها</h6><h2>{{ dashboard.report_total }}</h2></div></div>
+  <div class="col-md-3"><div class="stat-card"><h6>نرخ تأیید</h6><h2>{{ dashboard.approved_rate }}%</h2></div></div>
+  <div class="col-md-3"><div class="stat-card"><h6>نرخ رد</h6><h2>{{ dashboard.rejected_rate }}%</h2></div></div>
+  <div class="col-md-3"><div class="stat-card"><h6>ثبت مجدد</h6><h2>{{ dashboard.resubmitted_rate }}%</h2></div></div>
+</div>
+<div class="glass-card p-4 mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><h5 class="fw-bold mb-0">عملکرد پرسنل</h5><div class="d-flex flex-wrap gap-2"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.performance') }}">نمودار کامل عملکرد</a><a class="btn btn-sm btn-outline-success" href="{{ url_for('main.export_reports') }}">خروجی CSV</a><a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.export_reports_xlsx', jalali_month=selected_month) }}">خروجی Excel</a><a class="btn btn-sm btn-outline-danger" href="{{ url_for('main.export_reports_pdf', jalali_month=selected_month) }}">خروجی PDF</a></div></div>
+  <div class="table-responsive"><table class="table table-custom"><thead><tr><th>پرسنل</th><th>بخش‌ها</th><th>کل ثبت‌ها</th><th>تأیید</th><th>رد</th><th>امتیاز</th></tr></thead><tbody>{% for item in performance_data %}<tr><td>{{ item.name }}</td><td>{{ item.sections }}</td><td>{{ item.total }}</td><td>{{ item.approved }}</td><td>{{ item.rejected }}</td><td>{{ item.quality_score }}%</td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted">داده‌ای برای این بازه وجود ندارد.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="glass-card p-4"><h5 class="fw-bold mb-3">آخرین ثبت‌ها</h5><div class="table-responsive"><table class="table table-custom"><thead><tr><th>پرسنل</th><th>بخش</th><th>شرح</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>{% for report in reports %}<tr><td>{{ report.user.full_name if report.user else '-' }}</td><td>{{ report.section.name if report.section else '-' }}</td><td>{{ report.description }}</td><td>{{ report_status_label(report) }}</td><td>{{ report.created_at|jalali }}</td></tr>{% else %}<tr><td colspan="5" class="text-center text-muted">ثبت‌ای وجود ندارد.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

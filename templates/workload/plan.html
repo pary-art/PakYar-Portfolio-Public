@@ -1,0 +1,43 @@
+{% extends 'base.html' %}{% from 'workload/_fields.html' import filter, error_box with context %}
+{% block title %}ارزیابی شیفت | پاکیار{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><div><h2>{{ section.name }}؛ ارزیابی شیفت</h2><p class="text-muted">برآورد حجم کار، نه تعیین پزشکی توانایی فرد</p></div><a class="btn btn-outline-secondary align-self-start" href="{{ url_for('workload.setup', section_id=section.id) }}">مشخصات و معیارها</a></div>
+{{ filter(day, shift, shifts, date_label) }}{{ error_box(error) }}
+{% if plan %}
+<div class="card page-card p-4 mb-3"><h5>ارزیابی ذخیره‌شده — نسخه {{ plan.revision }}</h5>
+<p>زمان موردنیاز: <strong>{{ plan.total_minutes|round(1) }} دقیقه</strong>؛ {{ basis_labels[plan.snapshot.basis] }}</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>پرسنل</th><th>سهم از کار بخش</th><th>زمان کار</th></tr></thead><tbody>
+{% for a in plan.allocations %}<tr><td>{{ a.user_name }}</td><td>{{ a.percent|round(2) }}٪</td><td>{{ a.minutes|round(1) }} دقیقه</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="text-danger">کار تقسیم‌نشده: {{ (plan.total_minutes - (plan.allocations|sum(attribute='minutes')))|round(1) }} دقیقه</p>
+<details><summary>جزئیات محاسبه در زمان ثبت</summary><ul class="mt-2">{% for row in plan.snapshot.rows %}<li>{{ row.title }}: {{ row.quantity }} × {{ row.repeats }} × {{ row.minutes }} = {{ row.total|round(1) }} دقیقه — {{ row.reference }}؛ {{ basis_labels[row.basis] }}</li>{% endfor %}</ul></details>
+<p class="small text-muted mt-2 mb-0">تغییر معیارها این نتیجه را عوض نمی‌کند؛ ثبت دوباره، نتیجه را با معیارهای فعلی جایگزین می‌کند.</p></div>
+{% endif %}
+{% if preview %}
+<div class="card page-card p-4 mb-3"><h5>محاسبه با مشخصات و معیارهای فعلی</h5>
+<p class="fs-4">{{ preview.total|round(1) }} <span class="small text-muted">دقیقه کار برای این شیفت</span></p>
+<span class="badge bg-secondary mb-3">{{ basis_labels[preview.basis] }}</span>
+<div class="table-responsive"><table class="table"><thead><tr><th>فعالیت</th><th>تعداد</th><th>تکرار</th><th>دقیقه هر واحد</th><th>جمع دقیقه</th></tr></thead><tbody>
+{% for row in preview.rows %}<tr><td>{{ row.title }}{% if row.needs_review %}<small class="d-block text-warning">بررسی تخصصی لازم است</small>{% endif %}</td><td>{{ row.quantity }}</td><td>{{ row.repeats }}</td><td>{{ row.minutes }}</td><td>{{ row.total|round(1) }}</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endif %}
+{% if can_edit and preview %}
+{% if proposal is not none %}<div class="alert alert-info"><h5>پیشنهاد زمانی؛ هنوز ذخیره نشده</h5><p>این پیشنهاد فقط بار زمانی را بین افراد انتخاب‌شده متعادل می‌کند؛ پس از بررسی وظایف و محدودیت‌ها، سهم‌های مناسب را در فرم پایین وارد کنید.</p><ul>
+{% for row in proposal %}<li>{{ row.name }}: سهم پیشنهادی {{ row.percent|round(2) }}٪، معادل {{ row.minutes|round(1) }} دقیقه؛ بار کل شیفت {{ row.load }}٪</li>{% endfor %}</ul><p class="mb-0 small">اگر بار کل بالاتر از ۱۰۰٪ است، جابه‌جایی سهم‌ها به‌تنهایی کمبود زمان را رفع نمی‌کند.</p></div>{% endif %}
+<form method="post" class="card page-card p-4"><h5>افراد حاضر و تقسیم کار</h5>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="revision" value="{{ plan.revision if plan else 0 }}"><input type="hidden" name="date" value="{{ date_label(day) }}"><input type="hidden" name="shift" value="{{ shift }}">
+<p class="small text-muted">زمان مفید = طول شیفت − استراحت − سایر وظایف خارج از این برنامه. ظرفیت هر نفر بین تمام بخش‌های همین تاریخ و شیفت مشترک است؛ تغییر آن روی درصد همه بخش‌ها اثر می‌گذارد. زمان استراحت را مطابق برنامه کاری مجاز محل وارد کنید.</p>
+{% for u in staff %}{% set cap = capacities[u.id] %}{% set alloc = allocations.get(u.id) %}{% set prof = profiles.get(u.id) %}
+<fieldset class="border rounded-3 p-3 mb-3"><legend class="float-none w-auto fs-6 px-2">{{ u.full_name }}</legend>
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><label class="form-check"><input type="checkbox" class="form-check-input" name="worker" value="{{ u.id }}" {% if (request.method == 'POST' and u.id|string in request.form.getlist('worker')) or (request.method != 'POST' and alloc) %}checked{% endif %}> حاضر و انتخاب‌شده</label><a href="{{ url_for('workload.profile', user_id=u.id) }}" class="small">مشخصات و محدودیت کاری</a></div>
+{% if prof and prof.restrictions %}<p class="text-warning small">محدودیت کاری ثبت‌شده: {{ prof.restrictions }}{% if prof.review_due and prof.review_due < day %} — موعد بازبینی گذشته است{% endif %}</p>{% else %}<p class="small text-muted">محدودیت مستندی نمایش داده نشده؛ آموزش و تناسب وظیفه باید بررسی شود.</p>{% endif %}
+<div class="row g-2">
+{% for key, label, value in [('length', 'طول شیفت (دقیقه)', cap.shift_minutes if cap else ''), ('rest', 'استراحت (دقیقه)', cap.break_minutes if cap else ''), ('other', 'سایر وظایف (دقیقه)', cap.other_minutes if cap else ''), ('percent', 'سهم از کار این بخش (درصد)', alloc.percent if alloc else 0)] %}
+{% set name = key ~ '_' ~ u.id %}<div class="col-6 col-lg-3"><label class="form-label small" for="{{ name }}">{{ label }}</label><input class="form-control" id="{{ name }}" name="{{ name }}" type="number" step="0.01" min="0" max="{{ 100 if key == 'percent' else 1440 }}" value="{{ request.form.get(name, value) }}"></div>
+{% endfor %}</div><small class="text-muted d-block mt-2">کار ثبت‌شده در سایر بخش‌ها در همین شیفت: {{ prior[u.id]|round(1) }} دقیقه</small>
+</fieldset>{% else %}<p>پرسنل فعال به این بخش اختصاص داده نشده است.</p>{% endfor %}
+<label class="form-check mb-3"><input type="checkbox" class="form-check-input" name="reviewed" value="1"> محدودیت‌های کاری و آموزش لازم برای وظایف را بررسی کرده‌ام؛ این برآورد را حکم پزشکی یا قانونی تلقی نمی‌کنم.</label>
+<div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary" name="action" value="suggest">نمایش پیشنهاد توزیع زمانی</button><button class="btn btn-primary" name="action" value="save">ذخیره سهم‌های واردشده</button></div>
+</form>{% endif %}
+<a class="btn btn-outline-secondary mt-3" href="{{ url_for('workload.index', date=date_label(day), shift=shift) }}">مقایسه بار کاری افراد</a>
+{% endblock %}

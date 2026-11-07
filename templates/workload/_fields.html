@@ -1,0 +1,16 @@
+{% macro field(name, label, value='', type='text', required=false, step='any') %}
+<div class="col-md-6 col-xl-4">
+    <label class="form-label" for="{{ name }}">{{ label }}</label>
+    <input class="form-control" id="{{ name }}" name="{{ name }}" type="{{ type }}"
+           value="{{ request.form.get(name, value if value is not none else '') }}"
+           {% if type == 'number' %}step="{{ step }}" min="0"{% endif %} {% if required %}required{% endif %}>
+</div>
+{% endmacro %}
+{% macro error_box(error) %}{% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}{% endmacro %}
+{% macro filter(day, shift, shifts, date_label) %}
+<form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-4">
+    <div><label for="plan-date" class="form-label">تاریخ شمسی</label><input id="plan-date" class="form-control" name="date" value="{{ date_label(day) }}" required dir="ltr"></div>
+    <div><label for="plan-shift" class="form-label">شیفت</label><select id="plan-shift" class="form-select" name="shift">{% for s in shifts %}<option {% if s == shift %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    <button class="btn btn-primary" type="submit">نمایش</button>
+</form>
+{% endmacro %}

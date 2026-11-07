@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}پیام‌ها و پیگیری مشکلات | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">
+                {% if message_mode == "sent" %}
+                    پیام‌های ارسالی و پیگیری مشکلات
+                {% elif message_mode == "audit" %}
+                    گزارش پیام‌های سامانه
+                {% else %}
+                    کارتابل پیام‌ها و پیگیری مشکلات
+                {% endif %}
+            </h2>
+            <p class="mb-0 opacity-75">
+                {% if message_mode == "sent" %}
+                    اطلاع‌رسانی مشکل به مسئول بخش یا پرسنل و مشاهده پاسخ آن‌ها
+                {% elif message_mode == "audit" %}
+                    مشاهدهٔ پیام‌ها و پاسخ‌های ثبت‌شده در همهٔ بخش‌ها؛ بدون امکان تغییر
+                {% else %}
+                    مشاهده اطلاع مسئول خدمات و ثبت نتیجه پیگیری
+                {% endif %}
+            </p>
+        </div>
+        {% if current_user.role == "manager" %}
+            <a class="btn btn-light" href="{{ url_for('main.add_message') }}">
+                <i class="fa-solid fa-paper-plane ms-1"></i>
+                ارسال اطلاع جدید
+            </a>
+        {% endif %}
+        {% if current_user.role == "staff" %}
+            <a class="btn btn-light" href="{{ url_for('wellbeing.feedback') }}">
+                <i class="fa-solid fa-lock ms-1"></i>
+                پیام خصوصی به کارشناس بهداشت
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card page-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">
+                <i class="fa-solid fa-inbox ms-2 text-primary"></i>
+                {% if message_mode == "sent" %}پیام‌های ثبت‌شده{% elif message_mode == "audit" %}همهٔ پیام‌ها{% else %}پیام‌های دریافتی{% endif %}
+            </h5>
+            <p class="text-muted mb-0">
+                {% if message_mode == "sent" %}
+                    مسئول خدمات می‌تواند وضعیت پیگیری هر پیام را مشاهده کند.
+                {% elif message_mode == "audit" %}
+                    فهرست برای نظارت است؛ بازکردن پیام، وضعیت دیده‌شدن آن را تغییر نمی‌دهد.
+                {% else %}
+                    پیام‌های قرمز هنوز توسط شما دیده نشده‌اند.
+                {% endif %}
+            </p>
+        </div>
+        <span class="badge rounded-pill text-bg-secondary">{{ messages|length }} پیام</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>موضوع</th>
+                    <th>{% if message_mode == "audit" %}فرستنده{% elif message_mode == "sent" %}گیرنده{% else %}فرستنده{% endif %}</th>
+                    {% if message_mode == "audit" %}<th>گیرنده</th>{% endif %}
+                    <th>بخش</th>
+                    <th>اولویت</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in messages %}
+                    <tr class="{% if message_mode == 'received' and not message.is_seen %}message-unread{% endif %}">
+                        <td class="fw-bold">
+                            {{ message.subject }}
+                            {% if message_mode == "received" and not message.is_seen %}
+                                <span class="soft-badge soft-danger me-1">جدید</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if message_mode == "sent" %}
+                                {{ message.recipient.full_name if message.recipient else "-" }}
+                            {% else %}
+                                {{ message.sender.full_name if message.sender else "-" }}
+                            {% endif %}
+                        </td>
+                        {% if message_mode == "audit" %}<td>{{ message.recipient.full_name if message.recipient else "-" }}</td>{% endif %}
+                        <td>{{ message.section.name if message.section else "عمومی" }}</td>
+                        <td>
+                            <span class="soft-badge message-priority-{{ message.priority }}">
+                                {{ message_priority_label(message.priority) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                                {{ message_status_label(message.status) }}
+                            </span>
+                        </td>
+                        <td>{{ message.created_at|jalali }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.message_detail', message_id=message.id) }}">
+                                <i class="fa-solid fa-eye ms-1"></i>
+                                مشاهده
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="{% if message_mode == 'audit' %}8{% else %}7{% endif %}" class="text-center text-muted py-5">
+                            <i class="fa-regular fa-envelope-open fs-2 d-block mb-2"></i>
+                            هنوز پیامی ثبت نشده است.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

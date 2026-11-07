@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}کارتابل هوشمند امروز | پاکیار{% endblock %}
+
+{% block content %}
+<div class="today-board-page">
+    <div class="hero-box mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <div class="small opacity-75 mb-1">برنامه و پیگیری روز جاری</div>
+                <h2 class="fw-bold mb-1">کارتابل هوشمند امروز</h2>
+                <p class="mb-0 opacity-75">وضعیت چک‌لیست‌های امروز را یکجا ببینید.</p>
+            </div>
+            <a class="btn btn-light" href="{{ url_for('main.index') }}">
+                <i class="fa-solid fa-arrow-right ms-1"></i>
+                بازگشت به داشبورد
+            </a>
+        </div>
+    </div>
+
+    {% include "_today_board.html" %}
+</div>
+{% endblock %}

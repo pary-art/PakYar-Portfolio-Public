@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}شخصی‌سازی سامانه | پاکیار{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preferences-hero {
+        position: relative;
+        overflow: hidden;
+        padding: clamp(1rem, 2.2vw, 1.45rem);
+        border-radius: 18px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 12% 20%, rgba(255, 255, 255, .2), transparent 28%),
+            radial-gradient(circle at 90% 90%, rgba(255, 255, 255, .14), transparent 32%),
+            linear-gradient(135deg, var(--brand-ink), var(--primary-color) 58%, var(--secondary-color));
+        box-shadow: 0 14px 28px rgba(18, 59, 82, .12);
+    }
+
+    .preferences-hero::after {
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        right: -90px;
+        bottom: -145px;
+        border: 1px solid rgba(255, 255, 255, .25);
+        border-radius: 50%;
+        content: "";
+        box-shadow: 0 0 0 22px rgba(255, 255, 255, .05), 0 0 0 44px rgba(255, 255, 255, .035);
+    }
+
+    .preferences-hero > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .preferences-hero .hero-icon {
+        display: grid;
+        width: 46px;
+        height: 46px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, .3);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, .14);
+        font-size: 1.2rem;
+        backdrop-filter: blur(9px);
+    }
+
+    .preferences-section {
+        height: 100%;
+        padding: .9rem;
+        border: 1px solid rgba(255, 255, 255, .86);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, .86);
+        box-shadow: 0 8px 20px rgba(18, 59, 82, .055);
+    }
+
+    .preferences-section-title {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        margin-bottom: .72rem;
+    }
+
+    .preferences-section-title i {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        place-items: center;
+        border-radius: 10px;
+        color: var(--primary-color);
+        background: color-mix(in srgb, var(--secondary-color) 16%, white);
+    }
+
+    .preferences-section-title h5 {
+        margin: 0;
+        color: var(--brand-ink);
+        font-weight: 800;
+    }
+
+    .preferences-section-title small {
+        display: block;
+        margin-top: .2rem;
+        color: var(--muted);
+        line-height: 1.55;
+    }
+
+    .theme-grid,
+    .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+        gap: .55rem;
+    }
+
+    .preference-choice {
+        position: relative;
+        display: block;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .preference-choice > input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .choice-card {
+        display: block;
+        min-height: 100%;
+        padding: .68rem;
+        border: 1px solid #dbe8ed;
+        border-radius: 13px;
+        background: rgba(255, 255, 255, .72);
+        transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+
+    .choice-card:hover {
+        border-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .preference-choice > input:checked + .choice-card {
+        border-color: var(--primary-color);
+        background: color-mix(in srgb, var(--secondary-color) 9%, white);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 14%, transparent);
+    }
+
+    .choice-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-bottom: .65rem;
+    }
+
+    .choice-card-head strong {
+        color: var(--brand-ink);
+        font-size: .92rem;
+    }
+
+    .choice-card-head i {
+        color: var(--primary-color);
+    }
+
+    .theme-preview {
+        display: flex;
+        height: 42px;
+        align-items: center;
+        gap: .38rem;
+        padding: .45rem;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--preview-a), var(--preview-b));
+    }
+
+    .theme-preview span {
+        display: block;
+        width: 22px;
+        height: 22px;
+        border: 2px solid rgba(255, 255, 255, .75);
+        border-radius: 50%;
+        background: var(--preview-c);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+    }
+
+    .choice-description {
+        display: block;
+        min-height: 2.2em;
+        margin-top: .4rem;
+        color: var(--muted);
+        font-size: .76rem;
+        line-height: 1.5;
+    }
+
+    .font-sample {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: space-between;
+        gap: .7rem;
+        padding: .52rem .62rem;
+        border-radius: 11px;
+        background: #f5f9fa;
+    }
+
+    .font-sample b {
+        color: var(--brand-ink);
+    }
+
+    .font-small { font-size: .82rem; }
+    .font-normal { font-size: 1rem; }
+    .font-large { font-size: 1.2rem; }
+    .font-xlarge { font-size: 1.42rem; }
+
+    .date-sample {
+        display: block;
+        margin-top: .45rem;
+        padding: .52rem .62rem;
+        border-radius: 10px;
+        color: var(--brand-ink);
+        background: #f5f9fa;
+        font-size: .82rem;
+        font-weight: 700;
+        text-align: center;
+        direction: ltr;
+    }
+
+    .preference-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .68rem 0;
+        border-bottom: 1px dashed #d8e6eb;
+    }
+
+    .preference-toggle:last-child {
+        border-bottom: 0;
+    }
+
+    .preference-toggle-copy strong {
+        display: block;
+        color: var(--brand-ink);
+        font-size: .92rem;
+    }
+
+    .preference-toggle-copy small {
+        display: block;
+        margin-top: .2rem;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .form-switch .form-check-input {
+        width: 2.9rem;
+        height: 1.55rem;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .preferences-preview {
+        position: sticky;
+        top: 90px;
+        overflow: hidden;
+        min-height: 100%;
+        border: 1px solid rgba(255, 255, 255, .84);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, .86);
+        box-shadow: 0 8px 20px rgba(18, 59, 82, .055);
+    }
+
+    .preview-top {
+        padding: .78rem .9rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--brand-ink), var(--primary-color));
+    }
+
+    .preview-body {
+        padding: .85rem;
+    }
+
+    .preview-stat {
+        padding: .65rem;
+        border: 1px solid #e0ecef;
+        border-radius: 14px;
+        background: #fbfefe;
+    }
+
+    .preview-stat strong {
+        display: block;
+        margin-top: .3rem;
+        color: var(--brand-ink);
+        font-size: 1.25rem;
+    }
+
+    .preview-gradient {
+        height: 74px;
+        margin-top: .75rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--brand-ink), var(--primary-color) 58%, var(--secondary-color));
+    }
+
+    @media (max-width: 991.98px) {
+        .preferences-preview {
+            position: static;
+            min-height: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="preferences-hero mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="hero-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+            <div class="small opacity-75 mb-1">ظاهر اختصاصی حساب شما</div>
+            <h2 class="fw-bold mb-2">شخصی‌سازی سامانه</h2>
+            <p class="mb-0 opacity-75">رنگ، اندازه نوشته و شیوه نمایش تاریخ را مطابق سلیقه خودتان انتخاب کنید.</p>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="{{ url_for('main.preferences') }}">
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="preferences-section mb-3">
+                <div class="preferences-section-title">
+                    <i class="fa-solid fa-palette"></i>
+                    <div>
+                        <h5>رنگ‌بندی سامانه</h5>
+                        <small>یکی از پوسته‌های آماده را انتخاب کنید؛ تغییر رنگ‌ها همان لحظه در پیش‌نمایش دیده می‌شود.</small>
+                    </div>
+                </div>
+
+                <div class="theme-grid">
+                    {% for theme_key, option in theme_options.items() %}
+                        <label class="preference-choice">
+                            <input
+                                type="radio"
+                                name="theme"
+                                value="{{ theme_key }}"
+                                data-theme-choice
+                                {% if current_user.theme == theme_key %}checked{% endif %}
+                            >
+                            <span class="choice-card">
+                                <span class="choice-card-head">
+                                    <strong>{{ option.label }}</strong>
+                                    <i class="fa-solid {{ option.icon }}"></i>
+                                </span>
+                                <span
+                                    class="theme-preview"
+                                    style="--preview-a: {{ option.preview[0] }}; --preview-b: {{ option.preview[1] }}; --preview-c: {{ option.preview[2] }};"
+                                >
+                                    <span></span><span style="background: {{ option.preview[1] }}"></span><span style="background: {{ option.preview[2] }}"></span>
+                                </span>
+                                <span class="choice-description">{{ option.description }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-lg-6">
+                    <div class="preferences-section">
+                        <div class="preferences-section-title">
+                            <i class="fa-solid fa-text-height"></i>
+                            <div>
+                                <h5>اندازه نوشته</h5>
+                                <small>برای خوانایی بیشتر یا نمایش اطلاعات بیشتر در صفحه.</small>
+                            </div>
+                        </div>
+
+                        <div class="choice-grid">
+                            {% for font_key, option in font_scale_options.items() %}
+                                <label class="preference-choice">
+                                    <input
+                                        type="radio"
+                                        name="font_scale"
+                                        value="{{ font_key }}"
+                                        data-font-choice
+                                        {% if current_user.font_scale == font_key %}checked{% endif %}
+                                    >
+                                    <span class="choice-card">
+                                        <span class="choice-card-head">
+                                            <strong>{{ option.label }}</strong>
+                                            <i class="fa-solid fa-font"></i>
+                                        </span>
+                                        <span class="font-sample font-{{ font_key }}">
+                                            <b>{{ option.sample }}</b>
+                                            <small>{{ option.description }}</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="preferences-section">
+                        <div class="preferences-section-title">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <div>
+                                <h5>روش نمایش تاریخ</h5>
+                                <small>انتخاب کنید تاریخ‌ها شمسی، میلادی یا هر دو نمایش داده شوند.</small>
+                            </div>
+                        </div>
+
+                        <div class="choice-grid">
+                            {% for date_key, option in date_mode_options.items() %}
+                                <label class="preference-choice">
+                                    <input
+                                        type="radio"
+                                        name="date_mode"
+                                        value="{{ date_key }}"
+                                        data-date-choice
+                                        {% if current_user.date_mode == date_key %}checked{% endif %}
+                                    >
+                                    <span class="choice-card">
+                                        <span class="choice-card-head">
+                                            <strong>{{ option.label }}</strong>
+                                            <i class="fa-solid fa-calendar-check"></i>
+                                        </span>
+                                        <span class="date-sample">{{ option.sample }}</span>
+                                        <span class="choice-description">{{ option.description }}</span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section mb-3">
+                <div class="preferences-section-title">
+                    <i class="fa-solid fa-sliders"></i>
+                    <div>
+                        <h5>حالت‌های کاربردی</h5>
+                        <small>این گزینه‌ها فقط روی حساب شما اثر می‌گذارند و اطلاعات سامانه را تغییر نمی‌دهند.</small>
+                    </div>
+                </div>
+
+                <div class="preference-toggle">
+                    <div class="preference-toggle-copy">
+                        <strong><i class="fa-solid fa-compress ms-1 text-primary"></i> حالت فشرده</strong>
+                        <small>فاصله‌های صفحه کمتر می‌شود تا اطلاعات بیشتری هم‌زمان دیده شود.</small>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="compact_mode" value="1" data-compact-choice {% if current_user.compact_mode %}checked{% endif %}>
+                    </div>
+                </div>
+
+                <div class="preference-toggle">
+                    <div class="preference-toggle-copy">
+                        <strong><i class="fa-solid fa-person-walking ms-1 text-primary"></i> حرکت کمتر</strong>
+                        <small>انیمیشن‌ها کم می‌شوند تا صفحه آرام‌تر و مناسب‌تر برای بعضی کاربران باشد.</small>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="reduced_motion" value="1" data-motion-choice {% if current_user.reduced_motion %}checked{% endif %}>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section mb-3">
+                <div class="preferences-section-title">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <h5>امنیت حساب و تغییر رمز</h5>
+                        <small>رمز ورود حساب خودتان را بدون نیاز به مسئول خدمات تغییر دهید.</small>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label" for="current_password">رمز فعلی</label>
+                        <div class="password-field">
+                            <input
+                                class="form-control"
+                                id="current_password"
+                                name="current_password"
+                                type="password"
+                                autocomplete="current-password"
+                            >
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش رمز فعلی" aria-pressed="false">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="new_password">رمز جدید</label>
+                        <div class="password-field">
+                            <input
+                                class="form-control"
+                                id="new_password"
+                                name="new_password"
+                                type="password"
+                                minlength="8"
+                                autocomplete="new-password"
+                            >
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش رمز جدید" aria-pressed="false">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="confirm_password">تکرار رمز جدید</label>
+                        <div class="password-field">
+                            <input
+                                class="form-control"
+                                id="confirm_password"
+                                name="confirm_password"
+                                type="password"
+                                minlength="8"
+                                autocomplete="new-password"
+                            >
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش تکرار رمز جدید" aria-pressed="false">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-4 mt-3 mb-3">
+                    <i class="fa-solid fa-circle-info ms-1"></i>
+                    رمز جدید باید حداقل ۸ کاراکتر باشد.
+                </div>
+
+                <div class="text-end">
+                    <button class="btn btn-outline-primary" type="submit" name="action" value="change_password">
+                        <i class="fa-solid fa-key ms-1"></i>
+                        ذخیره رمز جدید
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                <button class="btn btn-primary px-4" type="submit" name="action" value="save_preferences" formnovalidate>
+                    <i class="fa-solid fa-check ms-1"></i>
+                    ذخیره تنظیمات
+                </button>
+                <button class="btn btn-outline-secondary px-4" type="submit" name="action" value="reset_preferences" formnovalidate>
+                    <i class="fa-solid fa-rotate-right ms-1"></i>
+                    بازگشت به حالت پیش‌فرض
+                </button>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <aside class="preferences-preview">
+                <div class="preview-top">
+                    <div class="small opacity-75">پیش‌نمایش زنده</div>
+                    <h5 class="fw-bold mb-0 mt-1">پاکیار با سلیقه شما</h5>
+                </div>
+                <div class="preview-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="preview-stat">
+                                <small class="text-muted">گزارش امروز</small>
+                                <strong>۲۴</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="preview-stat">
+                                <small class="text-muted">نرخ تأیید</small>
+                                <strong class="text-success">۹۲٪</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-gradient"></div>
+                    <div class="d-flex align-items-center justify-content-between mt-3">
+                        <span class="text-muted small">تاریخ نمونه</span>
+                        <span class="fw-bold" data-preview-date>۱۴۰۵/۰۶/۰۱</span>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        تنظیمات بعد از ذخیره‌سازی در ورودهای بعدی شما هم حفظ می‌شوند.
+                    </p>
+                </div>
+            </aside>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (() => {
+        const root = document.documentElement;
+        const body = document.body;
+        const datePreview = document.querySelector("[data-preview-date]");
+
+        document.querySelectorAll("[data-theme-choice]").forEach((input) => {
+            input.addEventListener("change", () => {
+                root.dataset.theme = input.value;
+            });
+        });
+
+        document.querySelectorAll("[data-font-choice]").forEach((input) => {
+            input.addEventListener("change", () => {
+                root.dataset.fontScale = input.value;
+            });
+        });
+
+        document.querySelectorAll("[data-date-choice]").forEach((input) => {
+            input.addEventListener("change", () => {
+                if (!datePreview) {
+                    return;
+                }
+                if (input.value === "gregorian") {
+                    datePreview.textContent = "۲۰۲۶/۰۸/۲۳";
+                } else if (input.value === "both") {
+                    datePreview.textContent = "۱۴۰۵/۰۶/۰۱ | ۲۰۲۶/۰۸/۲۳";
+                } else {
+                    datePreview.textContent = "۱۴۰۵/۰۶/۰۱";
+                }
+            });
+        });
+
+        const compact = document.querySelector("[data-compact-choice]");
+        compact?.addEventListener("change", () => {
+            body.classList.toggle("compact-mode", compact.checked);
+        });
+
+        const motion = document.querySelector("[data-motion-choice]");
+        motion?.addEventListener("change", () => {
+            root.dataset.motion = motion.checked ? "reduced" : "full";
+        });
+    })();
+</script>
+{% endblock %}

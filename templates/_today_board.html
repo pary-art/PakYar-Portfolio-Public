@@ -1,0 +1,164 @@
+<details
+    id="today-board"
+    class="glass-panel today-board-shell mb-4"
+    {% if today_board_page or today_board.pending_checks or today_board.unassigned_cards %}open{% endif %}
+>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-gauge-high"></i>
+                کارتابل هوشمند امروز
+            </span>
+            <span class="glass-panel-caption">
+                {{ today_board.weekday_label }} · {{ today_board.date_label }} ·
+                وضعیت چک‌لیست‌های برنامه‌ریزی‌شده
+            </span>
+        </span>
+        <span class="d-flex flex-wrap gap-2 align-items-center">
+            {% if not today_board.total_cards %}
+                <span class="soft-badge soft-secondary">برنامه‌ای برای امروز نیست</span>
+            {% elif today_board.pending_checks %}
+                <span class="soft-badge soft-danger">{{ today_board.pending_checks }} مورد باقی‌مانده</span>
+            {% elif today_board.unassigned_cards %}
+                <span class="soft-badge soft-warning">نیازمند تخصیص پرسنل</span>
+            {% else %}
+                <span class="soft-badge soft-success">همه کامل شده</span>
+            {% endif %}
+            <span class="soft-badge soft-info">{{ today_board.rate }}٪ پیشرفت</span>
+        </span>
+    </summary>
+
+    <div class="glass-panel-body">
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="rounded-4 p-3" style="background:#eef8f7;">
+                    <small class="text-muted">برنامه‌های امروز</small>
+                    <div class="fs-4 fw-bold text-primary">{{ today_board.total_cards }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="rounded-4 p-3" style="background:#eff6ff;">
+                    <small class="text-muted">مورد انجام‌شده</small>
+                    <div class="fs-4 fw-bold text-success">{{ today_board.completed_checks }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="rounded-4 p-3" style="background:#fff1f2;">
+                    <small class="text-muted">مورد باقی‌مانده</small>
+                    <div class="fs-4 fw-bold text-danger">{{ today_board.pending_checks }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="rounded-4 p-3" style="background:#fff7ed;">
+                    <small class="text-muted">بدون پرسنل</small>
+                    <div class="fs-4 fw-bold text-warning">{{ today_board.unassigned_cards }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if today_board.cards %}
+            <div class="today-board-grid">
+                {% for card in today_board.cards %}
+                    <article class="today-board-card status-{{ card.status }}">
+                        <div class="today-board-card-header">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-bold">{{ card.section.name }}</div>
+                                    <small class="text-muted">
+                                        {{ card.weekday_label }} · شیفت {{ card.shift }}
+                                    </small>
+                                </div>
+                                {% if card.status == "complete" %}
+                                    <span class="soft-badge soft-success">کامل</span>
+                                {% elif card.status == "unassigned" %}
+                                    <span class="soft-badge soft-warning">بدون پرسنل</span>
+                                {% else %}
+                                    <span class="soft-badge soft-danger">نیازمند اقدام</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                {% if card.daily_count %}
+                                    <span class="soft-badge soft-info">روزانه: {{ card.daily_count }}</span>
+                                {% endif %}
+                                {% if card.weekly_count %}
+                                    <span class="soft-badge soft-purple">هفتگی: {{ card.weekly_count }}</span>
+                                {% endif %}
+                                {% if card.staff_count %}
+                                    <span class="soft-badge soft-secondary">پرسنل: {{ card.staff_count }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="today-board-card-body">
+                            {% if card.is_unassigned %}
+                                <div class="text-warning small">
+                                    <i class="fa-solid fa-triangle-exclamation ms-1"></i>
+                                    برای این بخش پرسنلی تخصیص داده نشده است.
+                                </div>
+                            {% else %}
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>پیشرفت</span>
+                                    <strong>{{ card.completed_checks }} از {{ card.total_checks }} · {{ card.rate }}٪</strong>
+                                </div>
+                                <div class="progress today-board-progress mb-3">
+                                    <div
+                                        class="progress-bar {% if card.status == 'complete' %}bg-success{% elif card.status == 'pending' %}bg-danger{% else %}bg-warning{% endif %}"
+                                        style="width: {{ card.rate }}%;"
+                                    ></div>
+                                </div>
+
+                                {% if card.pending_items %}
+                                    <div class="small fw-bold mb-1">موارد نیازمند اقدام</div>
+                                    {% for item in card.pending_items %}
+                                        <div class="today-board-item">
+                                            <div>
+                                                <span class="d-block">{{ item.title }}</span>
+                                                <small>{{ item.frequency_label }}</small>
+                                                {% if current_user.role != "staff" and item.pending_people %}
+                                                    <small>
+                                                        پرسنل:
+                                                        {{ item.pending_people|join("، ") }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                            <i class="fa-solid fa-circle-exclamation text-danger mt-1"></i>
+                                        </div>
+                                    {% endfor %}
+                                    {% if card.pending_items_total > 5 %}
+                                        <small class="text-danger d-block mt-2">
+                                            {{ card.pending_items_total - 5 }} مورد دیگر هم باقی مانده است.
+                                        </small>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-success small">
+                                        <i class="fa-solid fa-circle-check ms-1"></i>
+                                        همهٔ موارد این برنامه انجام شده‌اند.
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                {% if card.daily_count %}
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ card.daily_url }}">
+                                        <i class="fa-solid fa-arrows-rotate ms-1"></i>چک‌لیست روزانه
+                                    </a>
+                                {% endif %}
+                                {% if card.weekly_count %}
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ card.weekly_url }}">
+                                        <i class="fa-solid fa-calendar-week ms-1"></i>چک‌لیست هفتگی
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-4">
+                <i class="fa-solid fa-calendar-check fs-2 d-block mb-2"></i>
+                برای امروز هنوز چک‌لیست برنامه‌ریزی‌شده‌ای وجود ندارد.
+            </div>
+        {% endif %}
+    </div>
+</details>

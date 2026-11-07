@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}ارسال اطلاع مشکل | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <h2 class="fw-bold mb-2">ارسال اطلاع مشکل</h2>
+    <p class="mb-0 opacity-75">
+        مشکل مشاهده‌شده را برای مسئول بخش یا پرسنل مسئول ارسال کنید تا نتیجه آن ثبت شود.
+    </p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <div class="card page-card p-4">
+            <form method="post" action="{{ url_for('main.add_message') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="recipient_id">گیرنده پیام</label>
+                        <select class="form-select" id="recipient_id" name="recipient_id" required>
+                            <option value="">انتخاب مسئول بخش یا پرسنل</option>
+                            {% for recipient in recipients %}
+                                <option value="{{ recipient.id }}">
+                                    {{ recipient.full_name }} -
+                                    {{ {"supervisor": "مسئول بخش", "staff": "پرسنل"}.get(recipient.role, recipient.role) }}
+                                </option>
+                            {% else %}
+                                <option value="" disabled>هنوز گیرنده‌ای ثبت نشده است</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            برای انتخاب بخش، گیرنده باید به همان بخش دسترسی داشته باشد.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="section_id">بخش مربوط به مشکل</label>
+                        <select class="form-select" id="section_id" name="section_id">
+                            <option value="">بدون بخش مشخص</option>
+                            {% for section in sections %}
+                                <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="priority">اولویت رسیدگی</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="normal">عادی</option>
+                            <option value="low">کم</option>
+                            <option value="high">مهم</option>
+                            <option value="urgent">فوری</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="subject">موضوع</label>
+                        <input class="form-control" id="subject" name="subject" maxlength="160" required
+                               placeholder="مثلاً: تمیز نبودن راهروی بخش جراحی">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="description">شرح مشکل و درخواست رسیدگی</label>
+                        <textarea class="form-control" id="description" name="description" rows="6" required
+                                  placeholder="مشکل را ساده و کامل توضیح دهید؛ مثلاً محل مشکل، زمان مشاهده و کاری که باید انجام شود."></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-paper-plane ms-1"></i>
+                        ارسال برای پیگیری
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.messages') }}">انصراف</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

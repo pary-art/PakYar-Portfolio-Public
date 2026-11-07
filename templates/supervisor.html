@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}پنل بررسی گزارش‌ها | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="dashboard-hero-simple d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">
+                {% if current_user.role in ("manager", "observer") %}پنل گزارش‌های مدیریتی{% else %}پنل مسئول بخش{% endif %}
+            </h2>
+            <p class="mb-0 opacity-75">بررسی گزارش‌های ثبت‌شده و ثبت بازخورد</p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('main.checklists') }}">
+            <i class="fa-solid fa-list-check ms-1"></i>
+            مدیریت چک‌لیست شیفت
+        </a>
+        <a class="btn btn-light" href="{{ url_for('main.workboard') }}">
+            <i class="fa-solid fa-inbox ms-1"></i>
+            کارتابل پیگیری
+            {% if workboard.summary.total %}
+                <span class="badge rounded-pill text-bg-danger me-1">{{ workboard.summary.total }}</span>
+            {% endif %}
+        </a>
+        <a class="btn btn-light" href="{{ url_for('main.notifications_page') }}">
+            <i class="fa-solid fa-bell ms-1"></i>
+            اعلان‌ها
+            {% if unread_notification_count %}
+                <span class="badge rounded-pill text-bg-danger me-1">{{ unread_notification_count }}</span>
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4 supervisor-stats">
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #b7791f, #8f5b0a);">
+            <h6>در انتظار بررسی</h6>
+            <h2 class="fw-bold my-1">{{ stats.pending }}</h2>
+            <i class="fa-solid fa-hourglass-half stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #1b8a5a, #12633f);">
+            <h6>تأیید شده</h6>
+            <h2 class="fw-bold my-1">{{ stats.approved }}</h2>
+            <i class="fa-solid fa-check-double stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #c2413b, #922f2b);">
+            <h6>رد شده</h6>
+            <h2 class="fw-bold my-1">{{ stats.rejected }}</h2>
+            <i class="fa-solid fa-xmark stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #2b7ea8, #205e7f);">
+            <h6>ثبت مجدد شده</h6>
+            <h2 class="fw-bold my-1">{{ stats.resubmitted }}</h2>
+            <i class="fa-solid fa-rotate-right stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #7353a6, #5f438d);">
+            <h6>تأیید پس از ثبت مجدد</h6>
+            <h2 class="fw-bold my-1">{{ stats.resubmitted_approved }}</h2>
+            <i class="fa-solid fa-circle-check stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == "supervisor" %}
+<details class="glass-panel mb-4" {% if inventory_alerts %}open{% endif %}>
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-triangle-exclamation"></i>هشدار کمبود مواد و تجهیزات</span>
+            <span class="glass-panel-caption">این هشدار فقط برای مسئول بخش‌های تحت نظارت شما نمایش داده می‌شود.</span>
+        </span>
+        {% if inventory_alerts %}
+            <span class="soft-badge soft-danger">{{ inventory_alerts|length }} هشدار فعال</span>
+        {% else %}
+            <span class="soft-badge soft-success">موجودی مناسب</span>
+        {% endif %}
+    </summary>
+    <div class="glass-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">اقلام نیازمند تأمین</h5>
+                <p class="text-muted mb-0">هر قلمی که موجودی آن به حد هشدار یا کمتر برسد در اینجا دیده می‌شود.</p>
+            </div>
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.inventory') }}">
+                <i class="fa-solid fa-boxes-stacked ms-1"></i>
+                مدیریت موجودی
+            </a>
+        </div>
+
+        {% if inventory_alerts %}
+            <div class="table-responsive">
+                <table class="table table-modern align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>بخش</th>
+                            <th>قلم</th>
+                            <th>نوع</th>
+                            <th>موجودی فعلی</th>
+                            <th>حد هشدار</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in inventory_alerts %}
+                            <tr class="{% if alert.severity == 'critical' %}table-danger{% else %}table-warning{% endif %}">
+                                <td>{{ alert.item.section.name }}</td>
+                                <td class="fw-bold">{{ alert.item.name }}</td>
+                                <td>
+                                    {% if alert.item.category == "material" %}
+                                        مواد شوینده و مصرفی
+                                    {% else %}
+                                        لوازم و تجهیزات
+                                    {% endif %}
+                                </td>
+                                <td>{{ alert.item.current_quantity|round(2) }} {{ alert.item.unit }}</td>
+                                <td>{{ alert.item.minimum_quantity|round(2) }} {{ alert.item.unit }}</td>
+                                <td>
+                                    {% if alert.severity == "critical" %}
+                                        <span class="soft-badge soft-danger">تمام شده</span>
+                                    {% else %}
+                                        <span class="soft-badge soft-warning">رو به اتمام</span>
+                                    {% endif %}
+                                    {% if alert.shortage > 0 %}
+                                        <small class="d-block text-danger mt-1">
+                                            کمبود: {{ alert.shortage|round(2) }} {{ alert.item.unit }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center text-success py-4">
+                <i class="fa-solid fa-circle-check fs-2 d-block mb-2"></i>
+                در حال حاضر هیچ هشدار کمبودی برای بخش‌های شما وجود ندارد.
+            </div>
+        {% endif %}
+    </div>
+</details>
+{% endif %}
+
+<details class="glass-panel mb-4">
+    <summary>
+        <span>
+        <span class="glass-panel-title"><i class="fa-solid fa-bullhorn"></i>اطلاعیه‌های مسئول خدمات و مشکلات بخش</span>
+            <span class="glass-panel-caption">پیام‌ها را باز کنید، بررسی کنید و پاسخ دهید</span>
+        </span>
+    </summary>
+    <div class="glass-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h5 class="fw-bold mb-1">
+                <i class="fa-solid fa-bullhorn ms-2 text-danger"></i>
+                اطلاع‌های مسئول خدمات و مشکلات بخش
+            </h5>
+            <p class="text-muted mb-0">اطلاع مشکل را ببینید و نتیجه رسیدگی را برای مسئول خدمات ثبت کنید.</p>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.messages') }}">
+            مشاهده همه پیام‌ها
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>موضوع</th>
+                    <th>بخش</th>
+                    <th>اولویت</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in received_messages %}
+                    <tr class="{% if not message.is_seen %}message-unread{% endif %}">
+                        <td class="fw-bold">
+                            {{ message.subject }}
+                            {% if not message.is_seen %}
+                                <span class="soft-badge soft-danger me-1">جدید</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ message.section.name if message.section else "عمومی" }}</td>
+                        <td>
+                            <span class="soft-badge message-priority-{{ message.priority }}">
+                                {{ message_priority_label(message.priority) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                                {{ message_status_label(message.status) }}
+                            </span>
+                        </td>
+                        <td>{{ message.created_at|jalali }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.message_detail', message_id=message.id) }}">
+                                بررسی و پاسخ
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">پیام جدیدی برای شما ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</details>
+
+<details class="glass-panel mb-4" {% if inventory_forecasts|selectattr('status', 'in', ['critical', 'warning', 'forecast', 'soon'])|list %}open{% endif %}>
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-chart-line"></i>پیش‌بینی کمبود موجودی</span>
+            <span class="glass-panel-caption">بر اساس روند ثبت مقدار موجودی در روزهای گذشته</span>
+        </span>
+        <span class="soft-badge soft-info">{{ inventory_forecasts|length }} قلم پایش‌شده</span>
+    </summary>
+    <div class="glass-card p-4">
+        <div class="alert alert-info rounded-4 border-0 mb-3">
+            <i class="fa-solid fa-circle-info ms-1"></i>
+            این پیش‌بینی از تغییرات ثبت‌شدهٔ موجودی ساخته می‌شود؛ هر بار مقدار موجودی را به‌روزرسانی کنید، دقت آن بیشتر می‌شود.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>بخش</th>
+                        <th>قلم</th>
+                        <th>موجودی</th>
+                        <th>میانگین مصرف روزانه</th>
+                        <th>برآورد زمان باقی‌مانده</th>
+                        <th>وضعیت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for forecast in inventory_forecasts %}
+                        <tr class="{% if forecast.status == 'critical' %}table-danger{% elif forecast.status in ('warning', 'forecast', 'soon') %}table-warning{% endif %}">
+                            <td>{{ forecast.item.section.name }}</td>
+                            <td class="fw-bold">{{ forecast.item.name }}</td>
+                            <td>{{ forecast.item.current_quantity|round(2) }} {{ forecast.item.unit }}</td>
+                            <td>
+                                {% if forecast.enough_data %}
+                                    {{ forecast.daily_average|round(2) }} {{ forecast.item.unit }}
+                                {% else %}
+                                    <span class="text-muted">داده کافی نیست</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if forecast.days_remaining is not none %}
+                                    حدود {{ forecast.days_remaining }} روز
+                                {% else %}
+                                    <span class="text-muted">قابل محاسبه نیست</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if forecast.status == "critical" %}
+                                    <span class="soft-badge soft-danger">تمام شده</span>
+                                {% elif forecast.status == "warning" %}
+                                    <span class="soft-badge soft-warning">زیر حد هشدار</span>
+                                {% elif forecast.status in ("forecast", "soon") %}
+                                    <span class="soft-badge soft-info">{{ forecast.label }}</span>
+                                {% else %}
+                                    <span class="soft-badge soft-success">مناسب</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">هنوز قلم موجودی برای پایش ثبت نشده است.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+
+<details class="glass-panel mb-4">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-list-check"></i>گزارش‌های بخش‌های تحت نظارت</span>
+            <span class="glass-panel-caption">بررسی گزارش نظافت و مشاهده نمودار و خروجی‌ها</span>
+        </span>
+    </summary>
+    <div class="glass-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h5 class="fw-bold mb-0">
+            <i class="fa-solid fa-list-check ms-2 text-primary"></i>
+            گزارش‌های بخش‌های تحت نظارت
+        </h5>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.export_reports') }}">
+            <i class="fa-solid fa-file-csv ms-1"></i>
+            دریافت خروجی CSV
+        </a>
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.export_reports_xlsx') }}">
+            <i class="fa-solid fa-file-excel ms-1"></i>
+            دریافت Excel
+        </a>
+        <a class="btn btn-outline-danger btn-sm" href="{{ url_for('main.export_reports_pdf') }}">
+            <i class="fa-solid fa-file-pdf ms-1"></i>
+            دریافت PDF
+        </a>
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.performance') }}">
+            <i class="fa-solid fa-chart-column ms-1"></i>
+            نمودار عملکرد
+        </a>
+        <a class="btn btn-outline-success btn-sm" href="{{ url_for('main.supply_report') }}">
+            <i class="fa-solid fa-boxes-stacked ms-1"></i>
+            گزارش ماهانه مصرف
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>پرسنل</th>
+                    <th>بخش</th>
+                    <th>شیفت</th>
+                    <th>شرح فعالیت</th>
+                    <th>زمان ثبت</th>
+                    <th>وضعیت</th>
+                    <th>اقدام</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                    <tr class="{% if report.resubmission_source and report.status == 'approved' %}table-violet{% elif report.status == 'rejected' %}table-danger{% elif report.resubmission_source or report.status == 'resubmitted' %}table-primary{% endif %}">
+                        <td class="fw-bold">{{ report.user.full_name if report.user else "-" }}</td>
+                        <td>{{ report.section.name if report.section else "-" }}</td>
+                        <td>{{ report.shift or "-" }}</td>
+                        <td style="min-width: 220px; white-space: normal;">
+                            {{ report.description or "-" }}
+                        </td>
+                        <td><small class="text-muted">{{ report.created_at|jalali }}</small></td>
+                        <td>
+                            {% if report.resubmission_source and report.status == "approved" %}
+                                <span class="soft-badge soft-purple">تأیید پس از ثبت مجدد</span>
+                            {% elif report.resubmission_source and report.status == "rejected" %}
+                                <span class="soft-badge soft-danger">رد پس از ثبت مجدد</span>
+                            {% elif report.resubmission_source or report.status == "resubmitted" %}
+                                <span class="soft-badge soft-info">ثبت مجدد شده</span>
+                            {% elif report.status == "pending" %}
+                                <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                            {% elif report.status == "approved" %}
+                                <span class="soft-badge soft-success">تأیید شده</span>
+                            {% else %}
+                                <span class="soft-badge soft-danger">رد شده</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.report_detail', report_id=report.id) }}">
+                                بررسی
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            گزارشی برای بخش‌های شما یافت نشد.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</details>
+
+<details id="supply-usages" class="glass-panel">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-boxes-stacked"></i>مصرف مواد و تجهیزات شیفت</span>
+            <span class="glass-panel-caption">بازبینی اقلام مصرف‌شده توسط پرسنل</span>
+        </span>
+    </summary>
+    <div class="glass-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">
+                <i class="fa-solid fa-boxes-stacked ms-2 text-primary"></i>
+                مصرف مواد و تجهیزات شیفت
+            </h5>
+            <p class="text-muted mb-0">مواردی که پرسنل برای بخش‌های تحت نظارت ثبت کرده‌اند.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>پرسنل</th>
+                    <th>بخش</th>
+                    <th>شیفت</th>
+                    <th>مواد شوینده</th>
+                    <th>تجهیزات</th>
+                    <th>هزینهٔ تقریبی</th>
+                    <th>وضعیت</th>
+                    <th>بازخورد</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usage in supply_usages %}
+                    <tr>
+                        <td class="fw-bold">{{ usage.user.full_name if usage.user else "-" }}</td>
+                        <td>{{ usage.section.name if usage.section else "-" }}</td>
+                        <td>{{ usage.shift }}</td>
+                        <td class="report-description" style="min-width: 210px;">{{ usage.materials }}</td>
+                        <td class="report-description" style="min-width: 210px;">{{ usage.equipment or "-" }}</td>
+                        <td>{{ "{:,.0f}".format(usage.estimated_cost or 0) }} تومان</td>
+                        <td>
+                            {% if usage.status == "reviewed" %}
+                                <span class="soft-badge soft-success">بررسی شد</span>
+                            {% else %}
+                                <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                            {% endif %}
+                        </td>
+                        <td style="min-width: 250px;">
+                            <form method="post" action="{{ url_for('main.review_supply_usage', usage_id=usage.id) }}">
+                                <textarea class="form-control form-control-sm mb-2" name="supervisor_feedback" rows="2" placeholder="بازخورد اختیاری">{{ usage.supervisor_feedback or "" }}</textarea>
+                                <input type="hidden" name="status" value="reviewed">
+                                <button class="btn btn-sm btn-success" type="submit">
+                                    <i class="fa-solid fa-check ms-1"></i>
+                                    علامت‌گذاری به‌عنوان بررسی‌شده
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            هنوز گزارشی از مصرف مواد و تجهیزات ثبت نشده است.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</details>
+{% endblock %}

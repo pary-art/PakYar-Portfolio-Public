@@ -1,0 +1,11 @@
+{% extends 'wellbeing/layout.html' %}{% from 'workload/_fields.html' import field with context %}
+{% block wellbeing_content %}
+<p class="text-muted">اصلاح ابزار یا روش کار را با وضعیت قبل، هدف قابل بررسی و نتیجه بعد ثبت کنید. اطلاعات پزشکی یا متن شکایت خصوصی را اینجا ننویسید.</p>
+{% if current_user.role in ('manager','oh_expert') %}<details class="card page-card p-4 mb-3"><summary>تعریف اقدام اصلاحی</summary><form method="post" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="row g-3">
+<div class="col-md-6"><label class="form-label" for="task_id">فعالیت</label><select id="task_id" name="task_id" class="form-select" required>{% for t in tasks %}<option value="{{ t.id }}">{{ t.section.name }} — {{ t.title }}</option>{% endfor %}</select></div>
+<div class="col-md-6"><label class="form-label" for="responsible_id">مسئول پیگیری</label><select id="responsible_id" name="responsible_id" class="form-select" required>{% for p in people %}<option value="{{ p.id }}">{{ p.full_name }}</option>{% endfor %}</select></div>
+{{ field('title','عنوان اصلاح', '', 'text', true) }}{{ field('due_date','موعد بررسی نتیجه (شمسی)', '', 'text', true) }}
+{% for key,label in [('before','وضعیت قبل؛ شرح یا اندازه‌گیری'),('target','اقدام و نتیجه مورد انتظار؛ چگونه بررسی می‌شود؟')] %}<div class="col-12"><label class="form-label" for="{{ key }}">{{ label }}</label><textarea class="form-control" id="{{ key }}" name="{{ key }}" rows="3" maxlength="2000" required>{{ request.form.get(key,'') }}</textarea></div>{% endfor %}
+</div><button class="btn btn-primary mt-3">ثبت و اطلاع به مسئول</button></form></details>{% endif %}
+{% for row in rows %}<article class="card page-card p-4 mb-3"><h5><a href="{{ url_for('wellbeing.action_detail', aid=row.id) }}">{{ row.title }}</a></h5><p>{{ outcomes[row.status] }} · موعد {{ date_label(row.due_date) }} {% if row.status != 'effective' and row.due_date <= today %}<span class="badge bg-warning text-dark">نیازمند پیگیری امروز</span>{% endif %}</p><a class="btn btn-sm btn-outline-primary align-self-start" href="{{ url_for('wellbeing.action_detail', aid=row.id) }}">ثبت نتیجه و پیگیری</a></article>{% else %}<p class="text-muted">اقدام اصلاحی ثبت نشده است.</p>{% endfor %}
+{% endblock %}

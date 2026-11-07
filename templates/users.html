@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت کاربران | پاکیار{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">{% if bootstrap_mode %}راه‌اندازی ناظر اداره‌کل{% else %}مدیریت کاربران{% endif %}</h2>
+        <p class="text-muted mb-0">{% if bootstrap_mode %}برای فعال‌شدن روال تعیین مسئول خدمات، ابتدا حساب ناظر را ایجاد کنید.{% else %}کاربران و بخش‌های مجاز آن‌ها{% endif %}</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('main.add_user') }}">
+        <i class="fa-solid fa-user-plus ms-1"></i> {% if bootstrap_mode %}ایجاد اولین ناظر{% else %}افزودن کاربر{% endif %}
+    </a>
+</div>
+
+<div class="card page-card p-4">
+    {% if bootstrap_mode %}
+        <div class="alert alert-info border-0 rounded-4 mb-4">
+            <i class="fa-solid fa-shield-halved ms-1"></i>
+            این حساب اولیه هنوز مسئول خدمات منصوب‌شده نیست و به امکانات مدیریتی دسترسی ندارد. ابتدا ناظر اداره‌کل را ایجاد کنید؛ سپس ناظر، مسئول خدمات را انتخاب می‌کند.
+        </div>
+    {% endif %}
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>شناسه</th>
+                    <th>نام کاربری</th>
+                    <th>نام کامل</th>
+                    <th>نقش</th>
+                    <th>بخش‌ها</th>
+                    <th>وضعیت حساب</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ role_label(user.role) }}{% if user.role == "manager" and not user.is_appointed_manager %}<small class="d-block text-warning">در انتظار انتصاب ناظر</small>{% elif user.is_appointed_manager %}<small class="d-block text-success">منصوب‌شده</small>{% endif %}</td>
+                        <td>
+                            {% for section in user.sections %}
+                                <span class="badge text-bg-light">{{ section.name }}</span>
+                            {% else %}-{% endfor %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="soft-badge soft-success">فعال</span>
+                            {% else %}
+                                <span class="soft-badge soft-danger">غیرفعال</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not bootstrap_mode %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.edit_user', user_id=user.id) }}">ویرایش</a>{% endif %}
+                            {% if not bootstrap_mode and user.role == 'staff' %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('workload.profile', user_id=user.id) }}">مشخصات کاری</a>{% endif %}
+                            {% if not bootstrap_mode and user.id != current_user.id and user.role not in ("manager", "observer") %}
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    <form method="post" action="{{ url_for('main.toggle_user_active', user_id=user.id) }}">
+                                        <button class="btn btn-sm {% if user.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" type="submit">
+                                            {% if user.is_active %}غیرفعال‌سازی{% else %}فعال‌سازی{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('main.delete_user', user_id=user.id) }}" onsubmit="return confirm('این کاربر حذف شود؟');">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                    </form>
+                                </div>
+                            {% elif user.id == current_user.id and not bootstrap_mode %}
+                                <span class="text-muted">حساب فعلی</span>
+                            {% elif user.role in ("manager", "observer") %}
+                                <span class="text-muted small d-block mt-1">حساب مدیریتی؛ نقش توسط ناظر اداره‌کل تعیین می‌شود</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">کاربری ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

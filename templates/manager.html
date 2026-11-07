@@ -1,0 +1,994 @@
+{% extends "base.html" %}
+
+{% block title %}داشبورد مدیریت | پاکیار{% endblock %}
+
+{% block extra_css %}
+<style>
+    .manager-dashboard {
+        --manager-ink: #123b52;
+        --manager-teal: #0f766e;
+        --manager-mint: #14b8a6;
+        --manager-surface: rgba(255, 255, 255, 0.92);
+    }
+
+    .manager-dashboard .manager-hero {
+        isolation: isolate;
+        padding: clamp(1.35rem, 3vw, 2.35rem);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background:
+            radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.2), transparent 30%),
+            radial-gradient(circle at 88% 92%, rgba(20, 184, 166, 0.3), transparent 32%),
+            linear-gradient(135deg, var(--brand-ink) 0%, var(--primary-color) 58%, var(--secondary-color) 100%);
+        box-shadow: 0 22px 44px rgba(15, 118, 110, 0.2);
+    }
+
+    .manager-dashboard .manager-hero::before {
+        width: 280px;
+        height: 280px;
+        top: -165px;
+        left: 28%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: transparent;
+        box-shadow: 0 0 0 22px rgba(255, 255, 255, 0.035), 0 0 0 44px rgba(255, 255, 255, 0.025);
+    }
+
+    .manager-dashboard .manager-hero::after {
+        width: 210px;
+        height: 210px;
+        right: -74px;
+        bottom: -125px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .manager-hero-content {
+        position: relative;
+        z-index: 1;
+        display: block;
+    }
+
+    .manager-hero-copy {
+        max-width: 760px;
+    }
+
+    .manager-hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        margin-bottom: .7rem;
+        padding: .4rem .72rem;
+        border: 1px solid rgba(255, 255, 255, .2);
+        border-radius: 999px;
+        color: rgba(255, 255, 255, .88);
+        background: rgba(255, 255, 255, .1);
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    .manager-hero-copy h2 {
+        max-width: 640px;
+        font-size: clamp(1.75rem, 3vw, 2.55rem);
+        letter-spacing: -.03em;
+    }
+
+    .manager-hero-copy p {
+        max-width: 620px;
+        line-height: 1.9;
+    }
+
+    .manager-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .55rem 1rem;
+        margin-top: 1rem;
+        color: rgba(255, 255, 255, .7);
+        font-size: .8rem;
+    }
+
+    .manager-hero-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .manager-hero-actions {
+        display: none;
+    }
+
+    .manager-dashboard .manager-hero-action {
+        display: flex;
+        min-height: 58px;
+        align-items: center;
+        gap: .62rem;
+        padding: .78rem .9rem;
+        border: 1px solid rgba(255, 255, 255, .22);
+        border-radius: 15px;
+        color: #fff;
+        background: rgba(255, 255, 255, .12);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+        backdrop-filter: blur(10px);
+        transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .manager-dashboard .manager-hero-action:hover,
+    .manager-dashboard .manager-hero-action:focus-visible {
+        border-color: rgba(255, 255, 255, .58);
+        color: var(--manager-ink);
+        background: rgba(255, 255, 255, .94);
+        transform: translateY(-2px);
+    }
+
+    .manager-dashboard .manager-hero-action i {
+        width: 1.15rem;
+        color: #b9fff4;
+        text-align: center;
+    }
+
+    .manager-dashboard .manager-hero-action:hover i,
+    .manager-dashboard .manager-hero-action:focus-visible i {
+        color: var(--manager-teal);
+    }
+
+    .manager-kpi-grid,
+    .manager-monthly-kpis {
+        position: relative;
+    }
+
+    .manager-dashboard .manager-kpi-grid > [class*="col-"],
+    .manager-dashboard .manager-monthly-kpis > [class*="col-"] {
+        display: flex;
+    }
+
+    .manager-dashboard .manager-kpi-grid .page-card,
+    .manager-dashboard .manager-monthly-kpis .page-card {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        border-color: rgba(202, 224, 229, .72);
+        background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(242, 250, 250, .82));
+    }
+
+    .manager-dashboard .manager-kpi-grid .page-card {
+        min-height: 118px;
+        padding: 1.05rem 1.15rem !important;
+    }
+
+    .manager-dashboard .manager-kpi-grid .page-card::before {
+        position: absolute;
+        top: .95rem;
+        left: 1rem;
+        color: var(--manager-teal);
+        content: "\f0c0";
+        font-family: "Font Awesome 6 Free";
+        font-size: 1.35rem;
+        font-weight: 900;
+        opacity: .14;
+    }
+
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(2) .page-card::before { content: "\f1ad"; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(3) .page-card::before { content: "\f15c"; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(4) .page-card::before { content: "\f017"; color: #d97706; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(5) .page-card::before { content: "\f00c"; color: #16a34a; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(6) .page-card::before { content: "\f00d"; color: #dc2626; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(7) .page-card::before { content: "\f021"; color: #2563eb; }
+    .manager-dashboard .manager-kpi-grid .col-6:nth-child(8) .page-card::before { content: "\f560"; color: #7353a6; }
+
+    .manager-dashboard .manager-kpi-grid .page-card::after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--manager-teal), var(--manager-mint));
+        content: "";
+        opacity: .72;
+    }
+
+    .manager-dashboard .manager-kpi-grid small,
+    .manager-dashboard .manager-monthly-kpis small {
+        position: relative;
+        z-index: 1;
+        color: #667f8b !important;
+        font-weight: 600;
+    }
+
+    .manager-dashboard .manager-kpi-grid .fs-3,
+    .manager-dashboard .manager-monthly-kpis .fs-3 {
+        position: relative;
+        z-index: 1;
+        margin-top: .25rem;
+        letter-spacing: -.04em;
+    }
+
+    .manager-dashboard .manager-monthly-kpis .page-card {
+        min-height: 96px;
+        padding: .92rem 1.05rem !important;
+        border-top-width: 3px;
+    }
+
+    .manager-dashboard .manager-monthly-kpis .page-card:hover,
+    .manager-dashboard .manager-kpi-grid .page-card:hover {
+        border-color: rgba(20, 184, 166, .42);
+        transform: translateY(-4px);
+        box-shadow: 0 18px 34px rgba(18, 59, 82, .14);
+    }
+
+    .manager-dashboard .manager-visual-card {
+        border: 1px solid rgba(255, 255, 255, .88);
+        background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(244, 251, 251, .84));
+    }
+
+    .manager-dashboard .glass-panel {
+        border-color: rgba(255, 255, 255, .92);
+        box-shadow: 0 12px 30px rgba(18, 59, 82, .075);
+    }
+
+    .manager-dashboard .glass-panel > summary {
+        padding: 1.1rem 1.3rem;
+    }
+
+    .manager-dashboard .table-modern {
+        --bs-table-bg: transparent;
+    }
+
+    .manager-dashboard .table-modern tbody tr {
+        transition: background .18s ease;
+    }
+
+    .manager-dashboard .table-modern tbody tr:hover td {
+        background: rgba(229, 246, 244, .56);
+    }
+
+    @media (min-width: 1200px) {
+        .manager-dashboard .manager-kpi-grid > .col-lg-2,
+        .manager-dashboard .manager-monthly-kpis > .col-lg-2 {
+            width: 25%;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .manager-hero-content {
+            display: block;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .manager-hero-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .manager-dashboard .manager-hero-action {
+            min-height: 52px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="manager-dashboard">
+<div class="hero-box manager-hero mb-4">
+    <div class="manager-hero-content">
+        <div class="manager-hero-copy">
+            <span class="manager-hero-eyebrow">
+                <i class="fa-solid fa-shield-halved"></i>
+                مرکز کنترل پاکیار
+            </span>
+            <h2 class="fw-bold mb-2">داشبورد مدیریت</h2>
+            <p class="mb-0 opacity-75">مدیریت کاربران، بخش‌ها و گزارش‌های سامانه</p>
+            <div class="manager-hero-meta">
+                <span><i class="fa-solid fa-circle-check"></i> دسترسی امن مسئول خدمات</span>
+                <span><i class="fa-solid fa-chart-line"></i> پایش لحظه‌ای عملکرد</span>
+            </div>
+        </div>
+        <div class="manager-hero-actions">
+            <a class="manager-hero-action" href="{{ url_for('main.performance') }}">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>نمودار عملکرد</span>
+            </a>
+            <a class="manager-hero-action" href="{{ url_for('main.checklists') }}">
+                <i class="fa-solid fa-list-check"></i>
+                <span>چک‌لیست‌ها</span>
+            </a>
+            <a class="manager-hero-action" href="{{ url_for('main.workboard') }}">
+                <i class="fa-solid fa-inbox"></i>
+                <span>کارتابل پیگیری</span>
+                {% if workboard.summary.total %}
+                    <span class="badge rounded-pill text-bg-danger me-1">{{ workboard.summary.total }}</span>
+                {% endif %}
+            </a>
+            <a class="manager-hero-action" href="{{ url_for('main.notifications_page') }}">
+                <i class="fa-solid fa-bell"></i>
+                <span>اعلان‌ها</span>
+                {% if unread_notification_count %}
+                    <span class="badge rounded-pill text-bg-danger me-1">{{ unread_notification_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<section class="row g-3 mb-4 manager-kpi-grid">
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100">
+            <small class="text-muted">کاربران</small>
+            <div class="fs-3 fw-bold">{{ stats.get("total_users", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100">
+            <small class="text-muted">بخش‌ها</small>
+            <div class="fs-3 fw-bold">{{ stats.get("total_sections", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100">
+            <small class="text-muted">کل گزارش‌ها</small>
+            <div class="fs-3 fw-bold">{{ stats.get("total_reports", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-warning">
+            <small class="text-muted">در انتظار</small>
+            <div class="fs-3 fw-bold text-warning">{{ stats.get("pending_reports", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-success">
+            <small class="text-muted">تأیید شده</small>
+            <div class="fs-3 fw-bold text-success">{{ stats.get("approved_reports", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-danger">
+            <small class="text-muted">رد شده</small>
+            <div class="fs-3 fw-bold text-danger">{{ stats.get("rejected_reports", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-primary">
+            <small class="text-muted">ثبت مجدد شده</small>
+            <div class="fs-3 fw-bold text-primary">{{ stats.get("resubmitted_reports", 0) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100" style="border-color: #b9a6d4;">
+            <small class="text-muted">تأیید پس از ثبت مجدد</small>
+            <div class="fs-3 fw-bold" style="color: #7353a6;">{{ stats.get("resubmitted_approved_reports", 0) }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4 manager-monthly-kpis">
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-primary">
+            <small class="text-muted">گزارش‌های ماه {{ dashboard.month_label }}</small>
+            <div class="fs-3 fw-bold text-primary">{{ dashboard.report_total }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-success">
+            <small class="text-muted">نرخ تأیید ماهانه</small>
+            <div class="fs-3 fw-bold text-success">{{ dashboard.approved_rate }}٪</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-danger">
+            <small class="text-muted">نرخ رد ماهانه</small>
+            <div class="fs-3 fw-bold text-danger">{{ dashboard.rejected_rate }}٪</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-info">
+            <small class="text-muted">تکمیل چک‌لیست امروز</small>
+            <div class="fs-3 fw-bold text-info">{{ dashboard.checklist_rate }}٪</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card page-card p-3 h-100 border-warning">
+            <small class="text-muted">هشدارهای پیش‌بینی کمبود</small>
+            <div class="fs-3 fw-bold text-warning">{{ dashboard.inventory_forecast_alerts }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="card page-card p-3 p-lg-4 mb-4 manager-dashboard-filter">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-sliders ms-2 text-primary"></i>فیلتر داشبورد مدیریتی</h5>
+            <p class="text-muted mb-0">آمار و نمودارها را بر اساس ماه، بخش و شیفت بررسی کنید.</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.manager') }}">
+            <i class="fa-solid fa-rotate-left ms-1"></i>حذف فیلترها
+        </a>
+    </div>
+    <form method="get" action="{{ url_for('main.manager') }}" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label" for="dashboard-month">ماه شمسی</label>
+            <input id="dashboard-month" class="form-control" type="text" name="jalali_month"
+                   value="{{ dashboard_filters.month }}" placeholder="مثلاً ۱۴۰۵-۰۶"
+                   inputmode="numeric" pattern="[۰-۹0-9]{4}[-/]?[۰-۹0-9]{1,2}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="dashboard-section">بخش</label>
+            <select id="dashboard-section" class="form-select" name="section_id">
+                <option value="">همهٔ بخش‌ها</option>
+                {% for section in dashboard_sections %}
+                    <option value="{{ section.id }}" {% if dashboard_filters.section_id == section.id %}selected{% endif %}>{{ section.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="dashboard-shift">شیفت</label>
+            <select id="dashboard-shift" class="form-select" name="shift">
+                <option value="">همهٔ شیفت‌ها</option>
+                {% for shift in dashboard_shifts %}
+                    <option value="{{ shift }}" {% if dashboard_filters.shift == shift %}selected{% endif %}>{{ shift }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+            <button class="btn btn-primary px-4" type="submit"><i class="fa-solid fa-filter ms-1"></i>اعمال فیلتر</button>
+        </div>
+    </form>
+</section>
+
+<details class="glass-panel mb-4" {% if dashboard.top_staff %}open{% endif %}>
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-ranking-star"></i>برترین شاخص‌های عملکرد</span>
+            <span class="glass-panel-caption">ترکیب نرخ تأیید گزارش و تکمیل چک‌لیست</span>
+        </span>
+        <a class="btn btn-sm btn-light" href="{{ url_for('main.performance') }}" onclick="event.stopPropagation();">
+            مشاهده جزئیات
+        </a>
+    </summary>
+    <div class="card page-card p-4">
+        <div class="alert alert-light border rounded-4 mb-3">
+            <i class="fa-solid fa-circle-info text-primary ms-1"></i>
+            امتیاز کلی از داده‌های موجود ساخته می‌شود و برای مقایسهٔ داخلی عملکرد است، نه ارزیابی اداری مستقل.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>رتبه</th>
+                        <th>پرسنل</th>
+                        <th>امتیاز کلی</th>
+                        <th>نرخ تأیید گزارش</th>
+                        <th>تکمیل چک‌لیست</th>
+                        <th>اصلاح‌های لازم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in dashboard.top_staff %}
+                        <tr>
+                            <td><span class="soft-badge {% if loop.index == 1 %}soft-purple{% elif loop.index == 2 %}soft-info{% else %}soft-secondary{% endif %}">#{{ loop.index }}</span></td>
+                            <td class="fw-bold">{{ item.name }}</td>
+                            <td><strong class="text-primary">{{ item.quality_score }}٪</strong></td>
+                            <td>{{ item.approved_rate }}٪ <small class="text-muted">({{ item.approved }}/{{ item.total }})</small></td>
+                            <td>{{ item.checklist_rate }}٪ <small class="text-muted">({{ item.checklist_completed }}/{{ item.checklist_total }})</small></td>
+                            <td>
+                                {% if item.corrections %}
+                                    <span class="soft-badge soft-danger">{{ item.corrections }}</span>
+                                {% else %}
+                                    <span class="soft-badge soft-success">بدون اصلاح</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">هنوز دادهٔ کافی برای رتبه‌بندی وجود ندارد.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card page-card manager-visual-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">نمای کلی عملکرد بخش‌ها</h5>
+                    <p class="text-muted mb-0">مقایسهٔ گزارش‌های ماه جاری به تفکیک بخش</p>
+                </div>
+                <span class="soft-badge soft-info">{{ dashboard.month_label }}</span>
+            </div>
+            {% if dashboard.report_by_section %}
+                <div style="height: 330px;">
+                    <canvas id="managerReportChart" aria-label="نمودار عملکرد بخش‌ها"></canvas>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">برای این ماه گزارشی وجود ندارد.</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card page-card manager-visual-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">وضعیت پشتیبان</h5>
+                    <p class="text-muted mb-0">پشتیبان‌گیری خودکار روزانه</p>
+                </div>
+                <i class="fa-solid fa-database text-primary fs-2"></i>
+            </div>
+            {% if dashboard.latest_backup %}
+                <div class="rounded-4 p-3 mb-3" style="background:#f0fdf4;">
+                    <div class="fw-bold text-success">آخرین پشتیبان آماده است</div>
+                    <small class="text-muted d-block mt-1">{{ dashboard.latest_backup.created_at|jalali }}</small>
+                    <small class="text-muted">{{ (dashboard.latest_backup.size / 1024 / 1024)|round(2) }} مگابایت</small>
+                </div>
+            {% else %}
+                <div class="rounded-4 p-3 mb-3" style="background:#fff7ed;">
+                    <div class="fw-bold text-warning">هنوز پشتیبانی ایجاد نشده است</div>
+                </div>
+            {% endif %}
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary btn-sm flex-grow-1" href="{{ url_for('main.backups') }}">مدیریت پشتیبان‌ها</a>
+                <form method="post" action="{{ url_for('main.create_manual_backup') }}">
+                    <button class="btn btn-primary btn-sm" type="submit" title="ایجاد پشتیبان فوری">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="card page-card manager-visual-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">ترکیب وضعیت گزارش‌ها</h5>
+                    <p class="text-muted mb-0">درصد تأیید، رد، ثبت مجدد و موارد در انتظار در بازهٔ انتخاب‌شده</p>
+                </div>
+                <span class="soft-badge soft-info">{{ dashboard.month_label }}</span>
+            </div>
+            <div style="height: 270px;">
+                <canvas id="managerStatusChart" aria-label="نمودار وضعیت گزارش‌ها"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card page-card manager-visual-card p-4 h-100">
+            <h5 class="fw-bold mb-1">خلاصهٔ بازهٔ انتخاب‌شده</h5>
+            <p class="text-muted mb-3">عددهای زیر با فیلترهای همین صفحه هماهنگ هستند.</p>
+            <div class="row g-3">
+                <div class="col-6"><div class="rounded-4 p-3 bg-light"><small class="text-muted">در انتظار</small><div class="fs-4 fw-bold text-warning">{{ dashboard.pending_count }}</div><small class="text-muted">{{ dashboard.pending_rate }}٪</small></div></div>
+                <div class="col-6"><div class="rounded-4 p-3 bg-light"><small class="text-muted">تأیید شده</small><div class="fs-4 fw-bold text-success">{{ dashboard.approved_count }}</div><small class="text-muted">{{ dashboard.approved_rate }}٪</small></div></div>
+                <div class="col-6"><div class="rounded-4 p-3 bg-light"><small class="text-muted">رد شده</small><div class="fs-4 fw-bold text-danger">{{ dashboard.rejected_count }}</div><small class="text-muted">{{ dashboard.rejected_rate }}٪</small></div></div>
+                <div class="col-6"><div class="rounded-4 p-3 bg-light"><small class="text-muted">ثبت مجدد</small><div class="fs-4 fw-bold text-primary">{{ dashboard.resubmitted_count }}</div><small class="text-muted">{{ dashboard.resubmitted_rate }}٪</small></div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<details class="glass-panel mb-4">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-bullhorn"></i>اطلاع‌رسانی و پیگیری مشکلات</span>
+            <span class="glass-panel-caption">ارسال پیام برای مسئول بخش یا پرسنل و مشاهده پاسخ‌ها</span>
+        </span>
+    </summary>
+    <section class="card page-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h5 class="fw-bold mb-1">
+                <i class="fa-solid fa-bullhorn ms-2 text-danger"></i>
+                اطلاع‌رسانی و پیگیری مشکلات
+            </h5>
+            <p class="text-muted mb-0">
+                مشکل مشاهده‌شده را برای مسئول بخش یا پرسنل ارسال کنید و پاسخ را پیگیری کنید.
+            </p>
+        </div>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('main.add_message') }}">
+            <i class="fa-solid fa-paper-plane ms-1"></i>
+            ارسال اطلاع جدید
+        </a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="rounded-4 p-3" style="background: #fff7ed;">
+                <small class="text-muted">جدید</small>
+                <div class="fs-4 fw-bold text-warning">{{ message_stats.new }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="rounded-4 p-3" style="background: #eff6ff;">
+                <small class="text-muted">در حال پیگیری</small>
+                <div class="fs-4 fw-bold text-primary">{{ message_stats.in_progress }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="rounded-4 p-3" style="background: #f0fdf4;">
+                <small class="text-muted">انجام شده</small>
+                <div class="fs-4 fw-bold text-success">{{ message_stats.resolved }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>موضوع</th>
+                    <th>گیرنده</th>
+                    <th>بخش</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in sent_messages %}
+                    <tr>
+                        <td class="fw-bold">{{ message.subject }}</td>
+                        <td>{{ message.recipient.full_name if message.recipient else "-" }}</td>
+                        <td>{{ message.section.name if message.section else "عمومی" }}</td>
+                        <td>
+                            <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                                {{ message_status_label(message.status) }}
+                            </span>
+                        </td>
+                        <td>{{ message.created_at|jalali }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.message_detail', message_id=message.id) }}">مشاهده</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">هنوز اطلاع مشکلی ارسال نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</details>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <details class="glass-panel h-100">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-user-plus"></i>افزودن کاربر</span>
+                    <span class="glass-panel-caption">ساخت حساب جدید و تعیین نقش و بخش‌های مجاز</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-user-plus ms-2 text-primary"></i>افزودن کاربر</h5>
+            <form method="post" action="{{ url_for('main.add_user') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="username">نام کاربری</label>
+                        <input class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="full_name">نام و نام خانوادگی</label>
+                        <input class="form-control" id="full_name" name="full_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="password">رمز عبور</label>
+                        <div class="password-field">
+                            <input class="form-control" id="password" name="password" type="password" minlength="8" required>
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش رمز عبور" aria-pressed="false">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="role">نقش کاربر</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="staff">پرسنل</option>
+                            <option value="supervisor">مسئول بخش</option>
+                            <option value="observer">ناظر اداره‌کل</option>
+                            <option value="manager">مسئول خدمات</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">بخش‌های مجاز کاربر</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for section in sections %}
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="section_ids" value="{{ section.id }}">
+                                    <span class="form-check-label">{{ section.name }}</span>
+                                </label>
+                            {% else %}
+                                <span class="text-muted">هنوز بخشی ثبت نشده است.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">
+                    <i class="fa-solid fa-plus ms-1"></i> افزودن کاربر
+                </button>
+            </form>
+        </div>
+            </div>
+        </details>
+    </div>
+
+    <div class="col-xl-6">
+        <details class="glass-panel h-100">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-hospital"></i>افزودن بخش</span>
+                    <span class="glass-panel-caption">تعریف بخش جدید برای تخصیص به کاربران</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-hospital ms-2 text-primary"></i>افزودن بخش</h5>
+            <form method="post" action="{{ url_for('main.add_section') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="section_name">نام بخش</label>
+                        <input class="form-control" id="section_name" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="floor">طبقه</label>
+                        <input class="form-control" id="floor" name="floor">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="section_description">توضیحات</label>
+                        <textarea class="form-control" id="section_description" name="description" rows="4"></textarea>
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">
+                    <i class="fa-solid fa-plus ms-1"></i> افزودن بخش
+                </button>
+            </form>
+        </div>
+            </div>
+        </details>
+    </div>
+</section>
+
+<details class="glass-panel mb-4">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-file-lines"></i>آخرین گزارش‌ها</span>
+            <span class="glass-panel-caption">مرور گزارش‌های نظافت و دسترسی به خروجی‌ها</span>
+        </span>
+    </summary>
+    <section class="card page-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h5 class="fw-bold mb-0">آخرین گزارش‌ها</h5>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.supervisor') }}">بررسی گزارش‌ها</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.export_reports') }}">خروجی CSV</a>
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.export_reports_xlsx') }}">خروجی Excel</a>
+            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('main.export_reports_pdf') }}">خروجی PDF</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>ثبت‌کننده</th>
+                    <th>بخش</th>
+                    <th>شیفت</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in recent_reports %}
+                    <tr class="{% if report.resubmission_source and report.status == 'approved' %}table-violet{% elif report.status == 'rejected' %}table-danger{% elif report.resubmission_source or report.status == 'resubmitted' %}table-primary{% endif %}">
+                        <td>{{ report.user.full_name if report.user else "-" }}</td>
+                        <td>{{ report.section.name if report.section else "-" }}</td>
+                        <td>{{ report.shift or "-" }}</td>
+                        <td>
+                            {% if report.resubmission_source and report.status == "approved" %}
+                                <span class="soft-badge soft-purple">تأیید پس از ثبت مجدد</span>
+                            {% elif report.resubmission_source and report.status == "rejected" %}
+                                <span class="soft-badge soft-danger">رد پس از ثبت مجدد</span>
+                            {% elif report.resubmission_source or report.status == "resubmitted" %}
+                                <span class="soft-badge soft-info">ثبت مجدد شده</span>
+                            {% elif report.status == "approved" %}
+                                <span class="soft-badge soft-success">تأیید شده</span>
+                            {% elif report.status == "rejected" %}
+                                <span class="soft-badge soft-danger">رد شده</span>
+                            {% else %}
+                                <span class="soft-badge soft-warning">در انتظار</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.created_at|jalali }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.report_detail', report_id=report.id) }}">مشاهده</a>
+                            <form class="d-inline" method="post" action="{{ url_for('main.delete_report', report_id=report.id) }}" onsubmit="return confirm('گزارش حذف شود؟');">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">هنوز گزارشی ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</details>
+
+<section class="row g-4">
+    <div class="col-lg-6">
+        <details class="glass-panel">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-users"></i>کاربران سامانه</span>
+                    <span class="glass-panel-caption">مشاهده، ویرایش و حذف کاربران</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">کاربران</h5>
+                <a href="{{ url_for('main.users') }}" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>نام</th><th>نقش</th><th>بخش‌ها</th><th></th></tr></thead>
+                    <tbody>
+                        {% for user in users[:8] %}
+                            <tr>
+                                <td>{{ user.full_name }}<br><small class="text-muted">{{ user.username }}</small></td>
+                                <td>{{ {"manager": "مسئول خدمات", "supervisor": "مسئول بخش", "observer": "ناظر اداره‌کل", "staff": "پرسنل"}.get(user.role, user.role) }}</td>
+                                <td>
+                                    {% for section in user.sections %}
+                                        <span class="badge text-bg-light">{{ section.name }}</span>
+                                    {% else %}-{% endfor %}
+                                </td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.edit_user', user_id=user.id) }}">ویرایش</a>
+                                    {% if user.id != current_user.id %}
+                                        <form method="post" action="{{ url_for('main.delete_user', user_id=user.id) }}" onsubmit="return confirm('این کاربر حذف شود؟');">
+                                            <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted">کاربری ثبت نشده است.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            </div>
+        </details>
+    </div>
+
+    <div class="col-lg-6">
+        <details class="glass-panel">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-hospital-user"></i>بخش‌ها</span>
+                    <span class="glass-panel-caption">مدیریت بخش‌ها و تعداد پرسنل هر بخش</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">بخش‌ها</h5>
+                <a href="{{ url_for('main.sections') }}" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>نام بخش</th><th>طبقه</th><th>تعداد پرسنل</th><th></th></tr></thead>
+                    <tbody>
+                        {% for section in sections[:8] %}
+                            <tr>
+                                <td>{{ section.name }}</td>
+                                <td>{{ section.floor or "-" }}</td>
+                                <td>{{ section.assigned_users.count() }}</td>
+                                <td>
+                                    <form method="post" action="{{ url_for('main.delete_section', section_id=section.id) }}" onsubmit="return confirm('این بخش حذف شود؟');">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted">بخشی ثبت نشده است.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            </div>
+        </details>
+    </div>
+</section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const managerSectionData = {{ dashboard.report_by_section|tojson }};
+    const managerReportCanvas = document.getElementById("managerReportChart");
+    const managerStatusCanvas = document.getElementById("managerStatusChart");
+
+    if (managerReportCanvas && managerSectionData.length) {
+        new Chart(managerReportCanvas, {
+            type: "bar",
+            data: {
+                labels: managerSectionData.map(item => item.name),
+                datasets: [
+                    {
+                        label: "کل گزارش",
+                        data: managerSectionData.map(item => item.total),
+                        backgroundColor: "#2b7ea8",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "تأیید شده",
+                        data: managerSectionData.map(item => item.approved),
+                        backgroundColor: "#1b8a5a",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "رد شده",
+                        data: managerSectionData.map(item => item.rejected),
+                        backgroundColor: "#c2413b",
+                        borderRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                        labels: { usePointStyle: true, padding: 16 },
+                    },
+                    tooltip: { rtl: true, textDirection: "rtl" },
+                },
+                scales: {
+                    x: { ticks: { autoSkip: false, maxRotation: 35, minRotation: 0 } },
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                },
+            },
+        });
+    }
+
+    if (managerStatusCanvas) {
+        new Chart(managerStatusCanvas, {
+            type: "doughnut",
+            data: {
+                labels: ["در انتظار", "تأیید شده", "رد شده", "ثبت مجدد"],
+                datasets: [{
+                    data: [
+                        {{ dashboard.pending_count|default(0) }},
+                        {{ dashboard.approved_count|default(0) }},
+                        {{ dashboard.rejected_count|default(0) }},
+                        {{ dashboard.resubmitted_count|default(0) }}
+                    ],
+                    backgroundColor: ["#f59e0b", "#16a34a", "#dc2626", "#2563eb"],
+                    borderColor: "#ffffff",
+                    borderWidth: 3,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "62%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                        labels: { usePointStyle: true, padding: 16 },
+                    },
+                    tooltip: { rtl: true, textDirection: "rtl" },
+                },
+            },
+        });
+    }
+</script>
+{% endblock %}

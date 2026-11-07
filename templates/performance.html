@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}نمودار عملکرد پرسنل | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">نمودار عملکرد پرسنل</h2>
+            <p class="mb-0 opacity-75">{{ scope_label }} بر اساس گزارش‌های ثبت‌شده</p>
+        </div>
+        <i class="fa-solid fa-chart-line fs-1 opacity-75"></i>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="card page-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h4 class="fw-bold mb-1">مقایسهٔ تعداد گزارش‌ها</h4>
+                    <p class="text-muted mb-0">تعداد گزارش‌های عادی و گزارش‌هایی که پس از ثبت مجدد تأیید یا رد شده‌اند.</p>
+                </div>
+                <span class="badge text-bg-light">{{ performance_data|length }} نفر</span>
+            </div>
+
+            {% if performance_data %}
+                <div style="height: 390px;">
+                    <canvas
+                        id="performanceChart"
+                        role="img"
+                        aria-label="نمودار تعداد وضعیت‌های عادی و وضعیت‌های پس از ثبت مجدد برای پرسنل"
+                    ></canvas>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    هنوز گزارشی برای نمایش عملکرد پرسنل ثبت نشده است.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card page-card p-4 h-100">
+            <div class="mb-3">
+                <h4 class="fw-bold mb-1">نرخ‌های درصدی وضعیت‌ها</h4>
+                <p class="text-muted mb-0">درصد هر وضعیت از کل گزارش‌های همان نفر.</p>
+            </div>
+
+            {% if performance_data %}
+                <div style="height: 390px;">
+                    <canvas
+                        id="rateChart"
+                        role="img"
+                        aria-label="نمودار درصد وضعیت‌های عادی و وضعیت‌های پس از ثبت مجدد گزارش‌های پرسنل"
+                    ></canvas>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    داده‌ای برای محاسبهٔ نرخ‌ها وجود ندارد.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card page-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">امتیاز کلی و تکمیل چک‌لیست</h4>
+            <p class="text-muted mb-0">امتیاز کلی ترکیبی از نرخ تأیید گزارش، تکمیل چک‌لیست و کاهش رد شدن است.</p>
+        </div>
+    </div>
+    {% if performance_data %}
+        <div style="height: 300px;">
+            <canvas id="qualityChart" role="img" aria-label="نمودار امتیاز کلی عملکرد پرسنل"></canvas>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-4">داده‌ای برای نمایش امتیاز کلی وجود ندارد.</div>
+    {% endif %}
+</div>
+
+<div class="card page-card p-4">
+    <h4 class="fw-bold mb-3">جزئیات عملکرد</h4>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>پرسنل</th>
+                    <th>کل گزارش‌ها</th>
+                    <th>تأیید شده<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>رد شده<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>در انتظار<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>ثبت مجدد شده<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>تأیید پس از ثبت مجدد<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>تکمیل چک‌لیست<br><small class="text-muted">تعداد / درصد</small></th>
+                    <th>امتیاز کلی</th>
+                    <th>اصلاح لازم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in performance_data %}
+                    <tr>
+                        <td class="fw-bold">{{ item.name }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>
+                            <span class="soft-badge soft-success">{{ item.approved }}</span>
+                            <small class="d-block text-success mt-1">{{ item.approved_rate }}٪</small>
+                        </td>
+                        <td>
+                            <span class="soft-badge soft-danger">{{ item.rejected }}</span>
+                            <small class="d-block text-danger mt-1">{{ item.rejected_rate }}٪</small>
+                        </td>
+                        <td>
+                            <span class="soft-badge soft-warning">{{ item.pending }}</span>
+                            <small class="d-block text-warning mt-1">{{ item.pending_rate }}٪</small>
+                        </td>
+                        <td>
+                            <span class="soft-badge soft-info">{{ item.resubmitted }}</span>
+                            <small class="d-block text-primary mt-1">{{ item.resubmitted_rate }}٪</small>
+                        </td>
+                        <td>
+                            <span class="soft-badge soft-purple">{{ item.resubmitted_approved }}</span>
+                            <small class="d-block mt-1" style="color: #7353a6;">{{ item.resubmitted_approved_rate }}٪</small>
+                        </td>
+                        <td>
+                            <span class="soft-badge soft-info">{{ item.checklist_completed }}</span>
+                            <small class="d-block text-primary mt-1">{{ item.checklist_rate }}٪</small>
+                        </td>
+                        <td><strong class="text-primary">{{ item.quality_score }}٪</strong></td>
+                        <td>
+                            {% if item.corrections %}
+                                <span class="soft-badge soft-danger">{{ item.corrections }}</span>
+                            {% else %}
+                                <span class="soft-badge soft-success">۰</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="10" class="text-center text-muted py-4">داده‌ای برای نمایش وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if performance_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const performanceData = {{ performance_data|tojson }};
+    const chartCanvas = document.getElementById("performanceChart");
+    const rateCanvas = document.getElementById("rateChart");
+    const qualityCanvas = document.getElementById("qualityChart");
+
+    if (chartCanvas && performanceData.length) {
+        new Chart(chartCanvas, {
+            type: "bar",
+            data: {
+                labels: performanceData.map(item => item.name),
+                datasets: [
+                    {
+                        label: "تأیید عادی",
+                        data: performanceData.map(item => item.regular_approved),
+                        rateKey: "regular_approved_rate",
+                        backgroundColor: "#1b8a5a",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "رد عادی",
+                        data: performanceData.map(item => item.regular_rejected),
+                        rateKey: "regular_rejected_rate",
+                        backgroundColor: "#c2413b",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "در انتظار عادی",
+                        data: performanceData.map(item => item.regular_pending),
+                        rateKey: "regular_pending_rate",
+                        backgroundColor: "#b7791f",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "ثبت مجدد، در انتظار",
+                        data: performanceData.map(item => item.resubmitted_pending),
+                        rateKey: "resubmitted_pending_rate",
+                        backgroundColor: "#2b7ea8",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "تأیید پس از ثبت مجدد",
+                        data: performanceData.map(item => item.resubmitted_approved),
+                        rateKey: "resubmitted_approved_rate",
+                        backgroundColor: "#7353a6",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "رد پس از ثبت مجدد",
+                        data: performanceData.map(item => item.resubmitted_rejected),
+                        rateKey: "resubmitted_rejected_rate",
+                        backgroundColor: "#9b3b53",
+                        borderRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                        labels: {
+                            usePointStyle: true,
+                            padding: 18,
+                        },
+                    },
+                    tooltip: {
+                        rtl: true,
+                        textDirection: "rtl",
+                        callbacks: {
+                            label: context => {
+                                const rate = performanceData[context.dataIndex][context.dataset.rateKey] ?? 0;
+                                return `${context.dataset.label}: ${context.raw} مورد (${rate}٪)`;
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 40,
+                            minRotation: 0,
+                        },
+                        title: {
+                            display: true,
+                            text: "نام پرسنل",
+                        },
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                        },
+                        title: {
+                            display: true,
+                            text: "تعداد گزارش",
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    if (rateCanvas && performanceData.length) {
+        new Chart(rateCanvas, {
+            type: "bar",
+            data: {
+                labels: performanceData.map(item => item.name),
+                datasets: [
+                    {
+                        label: "نرخ تأیید عادی",
+                        data: performanceData.map(item => item.regular_approved_rate),
+                        backgroundColor: "#1b8a5a",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "نرخ رد عادی",
+                        data: performanceData.map(item => item.regular_rejected_rate),
+                        backgroundColor: "#c2413b",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "نرخ در انتظار عادی",
+                        data: performanceData.map(item => item.regular_pending_rate),
+                        backgroundColor: "#b7791f",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "نرخ ثبت مجدد، در انتظار",
+                        data: performanceData.map(item => item.resubmitted_pending_rate),
+                        backgroundColor: "#2b7ea8",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "نرخ تأیید پس از ثبت مجدد",
+                        data: performanceData.map(item => item.resubmitted_approved_rate),
+                        backgroundColor: "#7353a6",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "نرخ رد پس از ثبت مجدد",
+                        data: performanceData.map(item => item.resubmitted_rejected_rate),
+                        backgroundColor: "#9b3b53",
+                        borderRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                        labels: {
+                            usePointStyle: true,
+                            padding: 14,
+                        },
+                    },
+                    tooltip: {
+                        rtl: true,
+                        textDirection: "rtl",
+                        callbacks: {
+                            label: context => `${context.dataset.label}: ${context.raw}٪`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 40,
+                            minRotation: 0,
+                        },
+                        title: {
+                            display: true,
+                            text: "نام پرسنل",
+                        },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: value => `${value}٪`,
+                        },
+                        title: {
+                            display: true,
+                            text: "درصد از کل گزارش‌ها",
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    if (qualityCanvas && performanceData.length) {
+        new Chart(qualityCanvas, {
+            type: "bar",
+            data: {
+                labels: performanceData.map(item => item.name),
+                datasets: [
+                    {
+                        label: "امتیاز کلی",
+                        data: performanceData.map(item => item.quality_score),
+                        backgroundColor: "#0f766e",
+                        borderRadius: 8,
+                    },
+                    {
+                        label: "تکمیل چک‌لیست",
+                        data: performanceData.map(item => item.checklist_rate),
+                        backgroundColor: "#2b7ea8",
+                        borderRadius: 8,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                    },
+                    tooltip: {
+                        rtl: true,
+                        textDirection: "rtl",
+                        callbacks: {
+                            label: context => `${context.dataset.label}: ${context.raw}٪`,
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { callback: value => `${value}٪` },
+                    },
+                },
+            },
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}مشخصات فردی پرسنل خدمات | پاکیار{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="fw-bold">مشخصات فردی پرسنل خدمات</h2>
+  <p class="text-muted mb-0">فقط کارکنان بخش‌هایی که مسئول خدمات برای شما تعیین کرده است نمایش داده می‌شوند.</p>
+</div>
+<div class="card page-card p-4">
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>نام پرسنل</th><th>بخش‌های مجاز</th><th>اقدام</th></tr></thead>
+      <tbody>
+      {% for person in people %}
+        <tr>
+          <td class="fw-semibold">{{ person.full_name }}</td>
+          <td>{{ person.sections|map(attribute='name')|join('، ') }}</td>
+          <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('workload.profile', user_id=person.id) }}">مشاهده و تکمیل مشخصات کاری</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" class="text-center text-muted py-4">پرسنلی در بخش‌های تعیین‌شده برای شما پیدا نشد.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

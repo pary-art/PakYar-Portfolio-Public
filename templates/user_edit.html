@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش کاربر | پاکیار{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">ویرایش کاربر</h2>
+                    <p class="text-muted mb-0">اطلاعات، رمز عبور و نقش‌های عادی را مدیریت کنید. مسئول خدمات فقط توسط ناظر اداره‌کل منصوب می‌شود.</p>
+                </div>
+                <i class="fa-solid fa-user-pen text-primary fs-2"></i>
+            </div>
+
+            <form method="post" action="{{ url_for('main.edit_user', user_id=user.id) }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="username">نام کاربری</label>
+                        <input class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="full_name">نام و نام خانوادگی</label>
+                        <input class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="password">رمز عبور جدید</label>
+                        <div class="password-field">
+                            <input class="form-control" id="password" name="password" type="password" minlength="8">
+                            <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش رمز عبور" aria-pressed="false">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">اگر خالی بماند، رمز عبور قبلی حفظ می‌شود.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="role">نقش کاربر</label>
+                        {% if user.role == "manager" %}
+                            <select class="form-select" id="role" disabled>
+                                <option selected>مسئول خدمات</option>
+                            </select>
+                            <input type="hidden" name="role" value="{{ user.role }}">
+                            <div class="form-text">نقش این حساب را ناظر اداره‌کل تعیین کرده است.</div>
+                        {% else %}
+                            <select class="form-select" id="role" name="role">
+                                <option value="staff" {% if user.role == "staff" %}selected{% endif %}>پرسنل</option>
+                                <option value="supervisor" {% if user.role == "supervisor" %}selected{% endif %}>مسئول بخش</option>
+                                <option value="oh_expert" {% if user.role == "oh_expert" %}selected{% endif %}>کارشناس بهداشت حرفه‌ای</option>
+                            </select>
+                            <div class="form-text">کارشناس بهداشت حرفه‌ای فقط مشخصات فردی پرسنل خدماتِ بخش‌های انتخاب‌شده را می‌بیند و ویرایش می‌کند.</div>
+                            {% if user.role == 'physician' %}<div class="alert alert-warning mt-2 mb-0">نقش پزشک از سامانه حذف شده و این حساب غیرفعال است. برای بازگشت، یکی از نقش‌های موجود را انتخاب و حساب را فعال کنید.</div>{% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">وضعیت حساب</label>
+                        <label class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" name="is_active" value="1" {% if user.is_active or user.id == current_user.id %}checked{% endif %} {% if user.id == current_user.id %}disabled{% endif %}>
+                            <span class="form-check-label">{% if user.is_active %}حساب فعال است{% else %}حساب غیرفعال است{% endif %}</span>
+                        </label>
+                        {% if user.id == current_user.id %}
+                            <div class="form-text">حساب فعلی همیشه فعال باقی می‌ماند.</div>
+                        {% endif %}
+                    </div>
+                    {% if user.role != "manager" %}
+                    <div class="col-12">
+                        <label class="form-label">بخش‌های مجاز</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for section in sections %}
+                                <label class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="section_ids"
+                                        value="{{ section.id }}"
+                                        {% if section in user.sections %}checked{% endif %}
+                                    >
+                                    <span class="form-check-label">{{ section.name }}</span>
+                                </label>
+                            {% else %}
+                                <span class="text-muted">بخشی ثبت نشده است.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-floppy-disk ms-1"></i>
+                        ذخیره تغییرات
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.users') }}">انصراف</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

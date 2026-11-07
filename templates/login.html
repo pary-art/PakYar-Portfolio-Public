@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود | پاکیار</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #123b52;
+            --primary: #0f766e;
+            --primary-dark: #0b5f5d;
+            --teal: #14b8a6;
+            --blue: #2b7ea8;
+            --text: #173042;
+            --muted: #637987;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            color: var(--text);
+            font-family: "Vazirmatn", Tahoma, sans-serif;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(20, 184, 166, 0.2), transparent 30%),
+                radial-gradient(circle at 88% 82%, rgba(18, 59, 82, 0.14), transparent 32%),
+                linear-gradient(135deg, #f5fafc, #edf6f8 52%, #f9fcfd);
+        }
+
+        .login-shell {
+            width: min(980px, 100%);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 24px 70px rgba(18, 59, 82, 0.14);
+            backdrop-filter: blur(18px);
+        }
+
+        .intro {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+            padding: 54px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--ink), var(--primary-dark) 52%, var(--teal));
+        }
+
+        .intro-icon {
+            width: 74px;
+            height: 74px;
+            display: grid;
+            place-items: center;
+            border-radius: 22px;
+            color: var(--ink);
+            background: #fff;
+            font-size: 2.2rem;
+            box-shadow: 0 14px 26px rgba(15, 23, 42, 0.14);
+        }
+
+        .intro h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); }
+        .intro p { margin: 0; line-height: 2; opacity: 0.86; }
+
+        .feature-list {
+            display: grid;
+            gap: 11px;
+            margin: 10px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            display: inline-grid;
+            place-items: center;
+            width: 22px;
+            height: 22px;
+            margin-left: 8px;
+            border-radius: 50%;
+            color: var(--ink);
+            background: #fff;
+            font-weight: 800;
+        }
+
+        .form-panel {
+            padding: 54px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-panel h2 { margin: 0 0 8px; font-size: 1.8rem; }
+        .subtitle { margin: 0 0 28px; color: var(--muted); }
+
+        .flash {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: #991b1b;
+            background: #fee2e2;
+            font-size: 0.9rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .field { margin-bottom: 18px; }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #d5e6eb;
+            border-radius: 13px;
+            outline: none;
+            color: var(--text);
+            background: #fff;
+            font: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            padding-left: 3.25rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: 0;
+            border-radius: 13px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--ink), var(--primary));
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(18, 59, 82, 0.18);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 25px rgba(15, 118, 110, 0.25);
+        }
+
+        .password-toggle {
+            position: absolute;
+            z-index: 2;
+            top: 50%;
+            left: 0.55rem;
+            display: inline-flex;
+            width: 2.3rem;
+            height: 2.3rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-radius: 10px;
+            color: #64748b;
+            background: transparent;
+            box-shadow: none;
+            transform: translateY(-50%);
+        }
+
+        .password-toggle:hover,
+        .password-toggle:focus-visible {
+            color: var(--primary);
+            background: #e5f6f4;
+            box-shadow: none;
+            transform: translateY(-50%);
+        }
+
+        .copyright {
+            margin-top: 26px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+            .login-shell { grid-template-columns: 1fr; }
+            .intro { padding: 34px; }
+            .feature-list { display: none; }
+            .form-panel { padding: 34px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-shell">
+        <section class="intro">
+            <div class="intro-icon" aria-hidden="true"><i class="fa-solid fa-hospital-user"></i></div>
+            <h1>پاکیار</h1>
+            <p>سامانهٔ هوشمند مدیریت نظافت، گزارش فعالیت و مصرف تجهیزات</p>
+            <ul class="feature-list">
+                <li>ثبت و پیگیری گزارش‌های روزانه</li>
+                <li>نظارت مسئول بخش بر عملکرد پرسنل</li>
+                <li>مدیریت مواد و تجهیزات مصرفی</li>
+            </ul>
+        </section>
+
+        <section class="form-panel">
+            <h2>خوش آمدید</h2>
+            <p class="subtitle">برای ورود به سامانه، اطلاعات خود را وارد کنید.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('main.login') }}">
+                <div class="field">
+                    <label for="username">نام کاربری</label>
+                    <input type="text" id="username" name="username" placeholder="نام کاربری خود را وارد کنید" autocomplete="username" required autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="password">رمز عبور</label>
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" placeholder="رمز عبور خود را وارد کنید" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="نمایش رمز عبور" aria-pressed="false">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit">ورود به سامانه</button>
+            </form>
+
+            <div class="copyright">© سامانه پاکیار</div>
+        </section>
+    </main>
+
+    <script>
+        document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+            const input = toggle.closest(".password-field")?.querySelector("input");
+            const icon = toggle.querySelector("i");
+
+            toggle.addEventListener("click", () => {
+                const isHidden = input.type === "password";
+                input.type = isHidden ? "text" : "password";
+                toggle.setAttribute("aria-pressed", String(isHidden));
+                toggle.setAttribute("aria-label", isHidden ? "مخفی کردن رمز عبور" : "نمایش رمز عبور");
+                icon.classList.toggle("fa-eye", !isHidden);
+                icon.classList.toggle("fa-eye-slash", isHidden);
+            });
+        });
+    </script>
+</body>
+</html>

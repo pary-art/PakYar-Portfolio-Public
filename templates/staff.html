@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}پنل پرسنل | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="dashboard-hero-simple d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">پنل پرسنل</h2>
+            <p class="mb-0 opacity-75">ثبت گزارش فعالیت و پیگیری وضعیت رسیدگی</p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('main.add_supply_usage') }}">
+            <i class="fa-solid fa-boxes-stacked ms-1"></i>
+            ثبت مصرف شیفت
+        </a>
+        <a class="btn btn-light" href="{{ url_for('main.checklists') }}">
+            <i class="fa-solid fa-list-check ms-1"></i>
+            چک‌لیست نظافت
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <details class="glass-panel h-100">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-file-circle-plus"></i>ثبت گزارش جدید</span>
+                    <span class="glass-panel-caption">ثبت وضعیت نظافت بخش و ارسال برای مسئول بخش</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold mb-0">ثبت گزارش جدید</h4>
+                <i class="fa-solid fa-file-circle-plus text-primary fs-4"></i>
+            </div>
+
+            <form method="post" action="{{ url_for('main.add_report') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label" for="section_id">بخش</label>
+                    <select id="section_id" name="section_id" class="form-select" required>
+                        <option value="">انتخاب بخش</option>
+                        {% for section in sections %}
+                            <option value="{{ section.id }}">{{ section.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not sections %}
+                        <div class="form-text text-danger">هنوز بخشی برای شما اختصاص داده نشده است.</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="shift">شیفت</label>
+                    <select id="shift" name="shift" class="form-select">
+                        <option value="">انتخاب شیفت</option>
+                        <option value="صبح">صبح</option>
+                        <option value="عصر">عصر</option>
+                        <option value="شب">شب</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="description">شرح فعالیت</label>
+                    <textarea id="description" name="description" class="form-control" rows="5" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="image">تصویر گزارش، در صورت نیاز</label>
+                    <input id="image" name="image" type="file" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp">
+                    <div class="form-text">حداکثر اندازهٔ فایل: ۵ مگابایت</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" {% if not sections %}disabled{% endif %}>
+                    <i class="fa-solid fa-paper-plane ms-1"></i>
+                    ثبت گزارش
+                </button>
+            </form>
+        </div>
+            </div>
+        </details>
+    </div>
+
+    <div class="col-lg-7">
+        <details class="glass-panel">
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-clipboard-list"></i>گزارش‌های من</span>
+                    <span class="glass-panel-caption">وضعیت بررسی، رد شدن و ثبت مجدد گزارش‌ها</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold mb-0">گزارش‌های من</h4>
+                <span class="badge text-bg-secondary">{{ reports|length }} گزارش</span>
+            </div>
+
+            <div class="table-responsive table-modern">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>بخش</th>
+                            <th>شیفت</th>
+                            <th>وضعیت</th>
+                            <th>تاریخ ثبت</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                            <tr class="{% if report.resubmission_source and report.status == 'approved' %}table-violet{% elif report.status == 'rejected' %}table-danger{% elif report.resubmission_source or report.status == 'resubmitted' %}table-primary{% endif %}">
+                                <td>{{ report.section.name if report.section else "-" }}</td>
+                                <td>{{ report.shift or "-" }}</td>
+                                <td>
+                                    {% if report.resubmission_source and report.status == "approved" %}
+                                        <span class="soft-badge soft-purple">تأیید پس از ثبت مجدد</span>
+                                    {% elif report.resubmission_source and report.status == "rejected" %}
+                                        <span class="soft-badge soft-danger">رد پس از ثبت مجدد</span>
+                                    {% elif report.resubmission_source or report.status == "resubmitted" %}
+                                        <span class="soft-badge soft-info">ثبت مجدد شده</span>
+                                    {% elif report.status == "approved" %}
+                                        <span class="soft-badge soft-success">تأیید شده</span>
+                                    {% elif report.status == "rejected" %}
+                                        <span class="soft-badge soft-danger">رد شده</span>
+                                    {% else %}
+                                        <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                                    {% endif %}
+                                    {% if report.status == "rejected" and report.supervisor_feedback %}
+                                        <small class="d-block text-danger mt-2">{{ report.supervisor_feedback }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ report.created_at|jalali }}</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.report_detail', report_id=report.id) }}">
+                                        مشاهده
+                                    </a>
+                                    {% if report.status == "rejected" %}
+                                        <a class="btn btn-sm btn-danger mt-1 mt-md-0" href="{{ url_for('main.resubmit_report', report_id=report.id) }}">
+                                            ثبت مجدد
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-secondary py-4">
+                                    هنوز گزارشی ثبت نشده است.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            </div>
+        </details>
+    </div>
+</div>
+
+<details class="glass-panel mt-4">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-bullhorn"></i>اطلاعیه‌ها و پیام‌های مسئول خدمات</span>
+            <span class="glass-panel-caption">مشاهده مشکل‌های اعلام‌شده و ثبت پاسخ</span>
+        </span>
+    </summary>
+    <div class="card page-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">
+                <i class="fa-solid fa-bullhorn ms-2 text-danger"></i>
+                اطلاع‌های مسئول خدمات و پیگیری مشکلات
+            </h4>
+            <p class="text-muted mb-0">اگر مسئول خدمات مشکلی را برای شما ارسال کند، پاسخ و نتیجه کار را ثبت کنید.</p>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.messages') }}">
+            مشاهده کارتابل پیام‌ها
+        </a>
+    </div>
+
+    <div class="table-responsive table-modern">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>موضوع</th>
+                    <th>بخش</th>
+                    <th>اولویت</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in received_messages %}
+                    <tr class="{% if not message.is_seen %}message-unread{% endif %}">
+                        <td class="fw-bold">
+                            {{ message.subject }}
+                            {% if not message.is_seen %}
+                                <span class="soft-badge soft-danger me-1">جدید</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ message.section.name if message.section else "عمومی" }}</td>
+                        <td>
+                            <span class="soft-badge message-priority-{{ message.priority }}">
+                                {{ message_priority_label(message.priority) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                                {{ message_status_label(message.status) }}
+                            </span>
+                        </td>
+                        <td>{{ message.created_at|jalali }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.message_detail', message_id=message.id) }}">
+                                مشاهده و پاسخ
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">پیامی برای شما ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</details>
+
+<details class="glass-panel mt-4">
+    <summary>
+        <span>
+            <span class="glass-panel-title"><i class="fa-solid fa-boxes-stacked"></i>مصرف مواد و تجهیزات</span>
+            <span class="glass-panel-caption">ثبت و پیگیری مواد شوینده، لوازم و تجهیزات هر شیفت</span>
+        </span>
+    </summary>
+    <div class="card page-card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">مصرف مواد و تجهیزات</h4>
+            <p class="text-muted mb-0">موارد ثبت‌شده برای مسئول بخش ارسال شده‌اند.</p>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.add_supply_usage') }}">
+            ثبت مورد جدید
+        </a>
+    </div>
+
+    <div class="table-responsive table-modern">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>بخش</th>
+                    <th>شیفت</th>
+                    <th>مواد شوینده</th>
+                    <th>لوازم و تجهیزات</th>
+                    <th>وضعیت ارسال</th>
+                    <th>تاریخ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usage in supply_usages %}
+                    <tr>
+                        <td>{{ usage.section.name if usage.section else "-" }}</td>
+                        <td>{{ usage.shift }}</td>
+                        <td class="report-description" style="min-width: 220px;">{{ usage.materials }}</td>
+                        <td class="report-description" style="min-width: 220px;">{{ usage.equipment or "-" }}</td>
+                        <td>
+                            {% if usage.status == "reviewed" %}
+                                <span class="soft-badge soft-success">دیده و بررسی شد</span>
+                            {% else %}
+                                <span class="soft-badge soft-warning">ارسال‌شده، در انتظار بررسی</span>
+                            {% endif %}
+                            {% if usage.supervisor_feedback %}
+                                <small class="d-block text-muted mt-2">{{ usage.supervisor_feedback }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ usage.created_at|jalali }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">
+                            هنوز مصرفی برای شیفت ثبت نشده است.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</details>
+{% endblock %}

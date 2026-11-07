@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}گزارش فعالیت‌ها | پاکیار{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold mb-1">گزارش فعالیت‌های سامانه</h2>
+    <p class="text-muted mb-0">آخرین ورودها و عملیات انجام‌شده</p>
+</div>
+
+<div class="card page-card p-4">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>زمان</th>
+                    <th>عملیات</th>
+                    <th>جزئیات</th>
+                    <th>شناسه کاربر</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in logs %}
+                    <tr>
+                        <td>{{ activity.created_at|jalali }}</td>
+                        <td>{{ activity.action }}</td>
+                        <td>{{ activity.details or "-" }}</td>
+                        <td>{{ activity.user_id or "-" }}</td>
+                        <td><code>{{ activity.ip_address or "-" }}</code></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">هنوز فعالیتی ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

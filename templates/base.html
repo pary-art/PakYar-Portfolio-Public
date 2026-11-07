@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html
+    lang="fa"
+    dir="rtl"
+    data-theme="{{ current_user.theme if current_user and current_user.theme else 'ocean' }}"
+    data-font-scale="{{ current_user.font_scale if current_user and current_user.font_scale else 'normal' }}"
+    data-motion="{{ 'reduced' if current_user and current_user.reduced_motion else 'full' }}"
+>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سامانه پاکیار{% endblock %}</title>
+    <meta name="theme-color" content="#123b52">
+    <meta name="application-name" content="پاکیار">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="پاکیار">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='pakyar-mark.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='pakyar-icon-180.png') }}">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-ink: #123b52;
+            --primary-color: #0f766e;
+            --primary-hover: #0b5f5d;
+            --secondary-color: #14b8a6;
+            --accent-color: #f59e0b;
+            --special-color: #7353a6;
+            --bg-gradient: linear-gradient(135deg, #f5fafc 0%, #edf6f8 52%, #f9fcfd 100%);
+            --card-bg: rgba(255, 255, 255, 0.94);
+            --text-main: #173042;
+            --muted: #637987;
+        }
+
+        html[data-theme="emerald"] {
+            --brand-ink: #064e3b;
+            --primary-color: #059669;
+            --primary-hover: #047857;
+            --secondary-color: #10b981;
+            --special-color: #7c3aed;
+            --bg-gradient: linear-gradient(135deg, #f2fcf8 0%, #eafaf3 52%, #fbfffd 100%);
+            --text-main: #12352d;
+            --muted: #607d73;
+        }
+
+        html[data-theme="royal"] {
+            --brand-ink: #312e81;
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary-color: #818cf8;
+            --special-color: #9333ea;
+            --bg-gradient: linear-gradient(135deg, #f5f5ff 0%, #eef0ff 52%, #fcfcff 100%);
+            --text-main: #25234f;
+            --muted: #6b6a8b;
+        }
+
+        html[data-theme="sunset"] {
+            --brand-ink: #7c2d12;
+            --primary-color: #ea580c;
+            --primary-hover: #c2410c;
+            --secondary-color: #f97316;
+            --accent-color: #eab308;
+            --special-color: #be185d;
+            --bg-gradient: linear-gradient(135deg, #fff8f2 0%, #fff1e8 52%, #fffdfb 100%);
+            --text-main: #4b2518;
+            --muted: #856b5f;
+        }
+
+        html[data-theme="rose"] {
+            --brand-ink: #881337;
+            --primary-color: #e11d48;
+            --primary-hover: #be123c;
+            --secondary-color: #fb7185;
+            --special-color: #7e22ce;
+            --bg-gradient: linear-gradient(135deg, #fff5f7 0%, #ffeef2 52%, #fffdfd 100%);
+            --text-main: #4c1d2a;
+            --muted: #876a74;
+        }
+
+        html[data-theme="graphite"] {
+            --brand-ink: #1f2937;
+            --primary-color: #475569;
+            --primary-hover: #334155;
+            --secondary-color: #64748b;
+            --special-color: #7c3aed;
+            --bg-gradient: linear-gradient(135deg, #f6f8fb 0%, #eef2f6 52%, #fcfdff 100%);
+            --text-main: #1f2937;
+            --muted: #667085;
+        }
+
+        html[data-font-scale="small"] { font-size: 15px; }
+        html[data-font-scale="normal"] { font-size: 16px; }
+        html[data-font-scale="large"] { font-size: 17px; }
+        html[data-font-scale="xlarge"] { font-size: 18px; }
+
+        html[data-motion="reduced"] *,
+        html[data-motion="reduced"] *::before,
+        html[data-motion="reduced"] *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+        }
+
+        body.compact-mode .page-card,
+        body.compact-mode .glass-card,
+        body.compact-mode .glass-panel-body {
+            padding: 0.85rem !important;
+            border-radius: 14px;
+        }
+
+        body.compact-mode .hero-box {
+            padding: 1.15rem;
+            border-radius: 14px;
+        }
+
+        body {
+            position: relative;
+            isolation: isolate;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+            background: var(--bg-gradient);
+            font-family: "Vazirmatn", Tahoma, sans-serif;
+        }
+
+        body::before,
+        body::after {
+            position: fixed;
+            z-index: -1;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            pointer-events: none;
+            content: "";
+            filter: blur(8px);
+            opacity: 0.42;
+        }
+
+        body::before {
+            top: 12%;
+            right: -120px;
+            background: radial-gradient(circle, rgba(20, 184, 166, 0.2), transparent 68%);
+        }
+
+        body::after {
+            bottom: 4%;
+            left: -130px;
+            background: radial-gradient(circle, rgba(18, 59, 82, 0.13), transparent 68%);
+        }
+
+        .navbar-custom {
+            position: relative;
+            z-index: 1031;
+            min-height: 72px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(239, 248, 249, 0.92));
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(15, 118, 110, 0.16);
+            box-shadow: 0 8px 28px rgba(18, 59, 82, 0.08);
+        }
+
+        .navbar-custom > .container {
+            max-width: none;
+            padding-right: clamp(1rem, 2.4vw, 2.5rem);
+            padding-left: clamp(1rem, 2.4vw, 2.5rem);
+        }
+
+        .topbar-menu-btn,
+        .topbar-icon-btn {
+            display: inline-grid;
+            width: 40px;
+            height: 40px;
+            place-items: center;
+            border: 1px solid rgba(15, 118, 110, 0.16);
+            border-radius: 13px;
+            color: var(--brand-ink);
+            background: rgba(255, 255, 255, 0.68);
+            transition: transform .2s ease, color .2s ease, background .2s ease, border-color .2s ease;
+        }
+
+        .topbar-menu-btn:hover,
+        .topbar-icon-btn:hover,
+        .topbar-menu-btn:focus-visible,
+        .topbar-icon-btn:focus-visible {
+            border-color: var(--secondary-color);
+            color: var(--primary-color);
+            background: #fff;
+            transform: translateY(-1px);
+        }
+
+        .topbar-icon-btn {
+            position: relative;
+            text-decoration: none;
+        }
+
+        .topbar-icon-btn .badge {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            min-width: 18px;
+            padding: .2rem .35rem;
+            font-size: .62rem;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            min-width: 0;
+            padding: .28rem .55rem .28rem .75rem;
+            border: 1px solid rgba(15, 118, 110, .1);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, .58);
+        }
+
+        .user-chip-avatar {
+            display: grid;
+            width: 35px;
+            height: 35px;
+            flex: 0 0 35px;
+            place-items: center;
+            border-radius: 12px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--brand-ink), var(--secondary-color));
+            box-shadow: 0 6px 14px rgba(18, 59, 82, .14);
+        }
+
+        .user-chip-copy {
+            min-width: 0;
+            line-height: 1.35;
+        }
+
+        .user-chip-copy strong,
+        .user-chip-copy small {
+            display: block;
+            overflow: hidden;
+            max-width: 190px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-chip-copy strong {
+            color: var(--brand-ink);
+            font-size: .83rem;
+        }
+
+        .user-chip-copy small {
+            color: var(--muted);
+            font-size: .68rem;
+        }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: 252px minmax(0, 1fr);
+            min-height: calc(100vh - 72px);
+        }
+
+        .app-sidebar {
+            position: sticky;
+            top: 72px;
+            z-index: 1020;
+            width: 252px;
+            height: calc(100vh - 72px);
+            padding: 1.1rem .85rem 1.1rem 0;
+            overflow-y: auto;
+            background: transparent;
+        }
+
+        .sidebar-panel {
+            display: flex;
+            min-height: 100%;
+            flex-direction: column;
+            padding: .9rem .72rem;
+            border: 1px solid rgba(255, 255, 255, .82);
+            border-radius: 24px 0 0 24px;
+            background: rgba(255, 255, 255, .68);
+            box-shadow: 0 16px 36px rgba(18, 59, 82, .08);
+            backdrop-filter: blur(16px);
+        }
+
+        .sidebar-mobile-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: .85rem;
+            color: var(--brand-ink);
+            font-weight: 800;
+        }
+
+        .sidebar-user {
+            display: none;
+            align-items: center;
+            gap: .7rem;
+            margin-bottom: .9rem;
+            padding: .8rem;
+            border-radius: 18px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--brand-ink), var(--primary-color));
+            box-shadow: 0 12px 22px rgba(18, 59, 82, .15);
+        }
+
+        .sidebar-user-icon {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .14);
+            font-size: 1.1rem;
+        }
+
+        .sidebar-user-copy {
+            min-width: 0;
+        }
+
+        .sidebar-user-copy strong,
+        .sidebar-user-copy small {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-user-copy strong {
+            font-size: .84rem;
+        }
+
+        .sidebar-user-copy small {
+            margin-top: .2rem;
+            color: rgba(255, 255, 255, .7);
+            font-size: .7rem;
+        }
+
+        .sidebar-label {
+            margin: .5rem .55rem .25rem;
+            color: var(--muted);
+            font-size: .67rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: .24rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            min-height: 40px;
+            padding: .52rem .68rem;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            color: var(--text-main);
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform .2s ease, color .2s ease, background .2s ease, border-color .2s ease;
+        }
+
+        .sidebar-link i {
+            width: 1.1rem;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link:focus-visible {
+            border-color: rgba(15, 118, 110, .14);
+            color: var(--brand-ink);
+            background: rgba(229, 246, 244, .72);
+            transform: translateX(-2px);
+        }
+
+        .sidebar-link.active {
+            border-color: rgba(15, 118, 110, .18);
+            color: #fff;
+            background: linear-gradient(135deg, var(--brand-ink), var(--primary-color));
+            box-shadow: 0 8px 16px rgba(15, 118, 110, .16);
+        }
+
+        .sidebar-link.active i {
+            color: #fff;
+        }
+
+        .sidebar-link-today {
+            min-height: 45px;
+            margin-bottom: .45rem;
+            border-color: rgba(15, 118, 110, .18);
+            color: var(--brand-ink);
+            background: linear-gradient(135deg, rgba(229, 246, 244, .96), rgba(255, 255, 255, .9));
+            box-shadow: 0 8px 16px rgba(15, 118, 110, .08);
+        }
+
+        .sidebar-link-today i:first-child {
+            color: var(--primary-color);
+        }
+
+        .sidebar-link-today.active {
+            color: #fff;
+            background: linear-gradient(135deg, var(--brand-ink), var(--primary-color));
+        }
+
+        .sidebar-link-today.active i:first-child {
+            color: #fff;
+        }
+
+        .sidebar-link-arrow {
+            width: auto !important;
+            margin-right: auto;
+            color: var(--primary-color) !important;
+            font-size: .7rem;
+        }
+
+        .sidebar-link-today.active .sidebar-link-arrow {
+            color: #fff !important;
+        }
+
+        .sidebar-link .badge {
+            margin-right: auto;
+            font-size: .62rem;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            margin: .7rem .6rem;
+            background: rgba(99, 121, 135, .16);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: .8rem;
+        }
+
+        .sidebar-status {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            padding: .65rem .75rem;
+            border-radius: 14px;
+            color: var(--muted);
+            background: rgba(239, 248, 249, .72);
+            font-size: .7rem;
+        }
+
+        .sidebar-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, .12);
+        }
+
+        .app-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-flash {
+            width: min(100%, 1540px);
+            margin: 0 auto;
+            padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 0;
+        }
+
+        .app-content {
+            width: min(100%, 1540px);
+            margin: 0 auto;
+            padding: 1.2rem clamp(1rem, 2.4vw, 2.5rem) 2.2rem;
+            flex: 1;
+        }
+
+        .app-footer {
+            margin-top: auto;
+            border-top: 1px solid rgba(15, 118, 110, .1);
+            background: rgba(255, 255, 255, .48) !important;
+        }
+
+        .guest-layout {
+            min-height: calc(100vh - 72px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guest-main {
+            flex: 1;
+        }
+
+        .topbar-logout {
+            display: none;
+        }
+
+        .connection-banner {
+            display: none;
+            margin: .75rem auto 0;
+            width: min(100% - 2rem, 1540px);
+            padding: .65rem .9rem;
+            border: 1px solid rgba(217, 119, 6, .2);
+            border-radius: 14px;
+            color: #92400e;
+            background: rgba(255, 247, 237, .92);
+            box-shadow: 0 8px 18px rgba(146, 64, 14, .07);
+            font-size: .82rem;
+        }
+
+        .connection-banner.is-visible {
+            display: block;
+        }
+
+        .dashboard-hero-simple > .btn {
+            display: none;
+        }
+
+        .dashboard-hero-simple > div:first-child {
+            flex: 1;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--brand-ink) !important;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .brand-logo i {
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            border-radius: 13px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--brand-ink), var(--secondary-color));
+            box-shadow: 0 8px 16px rgba(18, 59, 82, 0.2);
+        }
+
+        .glass-card,
+        .page-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.82);
+            border-radius: 18px;
+            box-shadow: 0 14px 34px rgba(18, 59, 82, 0.09);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .page-card:hover,
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 38px rgba(18, 59, 82, 0.13);
+        }
+
+        .glass-panel {
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.86);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: 0 14px 34px rgba(18, 59, 82, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        .glass-panel > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            color: var(--brand-ink);
+            cursor: pointer;
+            list-style: none;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(229, 246, 244, 0.72));
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .glass-panel > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .glass-panel > summary::after {
+            flex: 0 0 auto;
+            color: var(--primary-color);
+            content: "\f078";
+            font-family: "Font Awesome 6 Free";
+            font-size: 0.85rem;
+            font-weight: 900;
+            transition: transform 0.2s ease;
+        }
+
+        .glass-panel[open] > summary {
+            border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+            background: linear-gradient(135deg, rgba(18, 59, 82, 0.96), rgba(15, 118, 110, 0.94));
+            color: #fff;
+        }
+
+        .glass-panel[open] > summary::after {
+            color: #fff;
+            transform: rotate(180deg);
+        }
+
+        .glass-panel > summary:hover {
+            background: linear-gradient(135deg, rgba(220, 246, 243, 0.98), rgba(237, 246, 248, 0.98));
+        }
+
+        .glass-panel[open] > summary:hover {
+            background: linear-gradient(135deg, rgba(18, 59, 82, 0.98), rgba(15, 118, 110, 0.98));
+        }
+
+        .glass-panel-body {
+            padding: 1.25rem;
+        }
+
+        .glass-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-weight: 800;
+        }
+
+        .glass-panel-title i {
+            width: 1.35rem;
+            text-align: center;
+        }
+
+        .glass-panel-caption {
+            display: block;
+            margin-top: 0.18rem;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 400;
+        }
+
+        .glass-panel[open] .glass-panel-caption {
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .today-board-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+            gap: 1rem;
+        }
+
+        .today-board-shell {
+            scroll-margin-top: 92px;
+        }
+
+        .today-board-card {
+            overflow: hidden;
+            border: 1px solid #dcebed;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 8px 20px rgba(18, 59, 82, 0.06);
+        }
+
+        .today-board-card.status-pending {
+            border-color: #f4c7c7;
+        }
+
+        .today-board-card.status-complete {
+            border-color: #b9e4ce;
+        }
+
+        .today-board-card.status-unassigned {
+            border-color: #f2d59a;
+        }
+
+        .today-board-card-header {
+            padding: 1rem;
+            background: linear-gradient(135deg, #f7fbfc, #eef8f7);
+        }
+
+        .today-board-card.status-pending .today-board-card-header {
+            background: linear-gradient(135deg, #fff8f8, #fff1f2);
+        }
+
+        .today-board-card.status-complete .today-board-card-header {
+            background: linear-gradient(135deg, #f5fff8, #ecfdf5);
+        }
+
+        .today-board-card.status-unassigned .today-board-card-header {
+            background: linear-gradient(135deg, #fffaf0, #fff7ed);
+        }
+
+        .today-board-card-body {
+            padding: 1rem;
+        }
+
+        .today-board-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .65rem 0;
+            border-bottom: 1px dashed #dcebed;
+        }
+
+        .today-board-item:last-child {
+            border-bottom: 0;
+        }
+
+        .today-board-item small {
+            display: block;
+            margin-top: .2rem;
+            color: var(--muted);
+        }
+
+        .today-board-progress {
+            height: .55rem;
+            border-radius: 999px;
+            background: #e7eff1;
+        }
+
+        .today-board-progress .progress-bar {
+            border-radius: 999px;
+        }
+
+        .hero-box {
+            position: relative;
+            overflow: hidden;
+            padding: 24px;
+            color: white;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--brand-ink) 0%, var(--primary-color) 58%, var(--secondary-color) 100%);
+            box-shadow: 0 14px 30px rgba(15, 118, 110, 0.2);
+        }
+
+        .hero-box::before,
+        .hero-box::after {
+            position: absolute;
+            border-radius: 50%;
+            content: "";
+            pointer-events: none;
+        }
+
+        .hero-box::before {
+            width: 190px;
+            height: 190px;
+            top: -100px;
+            left: -40px;
+            background: rgba(255, 255, 255, 0.13);
+        }
+
+        .hero-box::after {
+            width: 150px;
+            height: 150px;
+            right: 8%;
+            bottom: -100px;
+            background: rgba(255, 255, 255, 0.11);
+        }
+
+        .hero-box > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 120px;
+            padding: 20px;
+            color: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .supervisor-stats > [class*="col-"] {
+            display: flex;
+        }
+
+        .supervisor-stats .stat-card {
+            width: 100%;
+            min-height: 128px;
+        }
+
+        .table-responsive {
+            border-radius: 16px;
+            scrollbar-color: rgba(15, 118, 110, .35) transparent;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 7px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: rgba(15, 118, 110, .35);
+        }
+
+        .stat-icon {
+            position: absolute;
+            left: 18px;
+            bottom: 12px;
+            font-size: 3rem;
+            opacity: 0.2;
+        }
+
+        .table-modern th,
+        .table-modern td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .table-custom tbody tr.table-danger td {
+            background-color: #fff1f2;
+        }
+
+        .table-custom tbody tr.table-primary td {
+            background-color: #eaf4f7;
+        }
+
+        .table-violet td,
+        .table-custom tbody tr.table-violet td {
+            background-color: #f5f1fa !important;
+        }
+
+        .soft-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .soft-success { color: #166534; background: #dcfce7; }
+        .soft-warning { color: #92400e; background: #fef3c7; }
+        .soft-danger { color: #991b1b; background: #fee2e2; }
+        .soft-info { color: #205e7f; background: #e3f1f6; }
+        .soft-purple { color: var(--special-color); background: #efe9f8; }
+        .soft-secondary { color: #334155; background: #e2e8f0; }
+
+        .alert-violet {
+            color: #5f438d;
+            background: #f5f1fa;
+            border-color: #d8cbe8;
+        }
+
+        .btn-primary {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--brand-ink), var(--primary-color));
+            box-shadow: 0 8px 16px rgba(18, 59, 82, 0.16);
+        }
+
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+
+        .border-primary {
+            border-color: rgba(15, 118, 110, 0.42) !important;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--primary-hover), #0f8f82);
+            box-shadow: 0 11px 20px rgba(15, 118, 110, 0.23);
+        }
+
+        .btn-outline-primary {
+            color: var(--brand-ink);
+            border-color: rgba(15, 118, 110, 0.42);
+        }
+
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+        }
+
+        .form-control,
+        .form-select {
+            border-color: #d5e6eb;
+            border-radius: 13px;
+            background-color: rgba(255, 255, 255, 0.88);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(15, 118, 110, 0.62);
+            box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.11);
+        }
+
+        .table-modern thead th {
+            color: var(--brand-ink);
+            background: linear-gradient(90deg, #f0f8f9, #eef6f8);
+            border-bottom-color: #c5dfe3;
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field .form-control,
+        .password-field input {
+            padding-left: 3.25rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            z-index: 2;
+            top: 50%;
+            left: 0.55rem;
+            display: inline-flex;
+            width: 2.25rem;
+            height: 2.25rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-radius: 10px;
+            color: #64748b;
+            background: transparent;
+            box-shadow: none;
+            transform: translateY(-50%);
+        }
+
+        .password-toggle:hover,
+        .password-toggle:focus-visible {
+            color: var(--primary-color);
+            background: #e5f6f4;
+            box-shadow: none;
+            transform: translateY(-50%);
+        }
+
+        .report-description {
+            white-space: pre-wrap;
+            line-height: 1.9;
+        }
+
+        .report-image {
+            max-height: 360px;
+            object-fit: contain;
+            border-radius: 14px;
+            background: #f3f8fa;
+        }
+
+        .message-unread {
+            border-right: 4px solid #dc2626 !important;
+            background: linear-gradient(90deg, #fff, #fff5f5);
+        }
+
+        .message-description {
+            white-space: pre-wrap;
+            line-height: 2;
+        }
+
+        .message-priority-urgent {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .message-priority-high {
+            color: #9a3412;
+            background: #ffedd5;
+        }
+
+        .message-priority-normal {
+            color: #1e40af;
+            background: #dbeafe;
+        }
+
+        .message-priority-low {
+            color: #475569;
+            background: #e2e8f0;
+        }
+
+        .message-status-new {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .message-status-in-progress {
+            color: #1d4ed8;
+            background: #dbeafe;
+        }
+
+        .message-status-resolved {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        @media (max-width: 767.98px) {
+            .supervisor-stats > [class*="col-"] {
+                width: 50%;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .supervisor-stats > [class*="col-"] {
+                width: 33.333333%;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .supervisor-stats > [class*="col-"] {
+                width: 20%;
+            }
+        }
+
+        .navbar-custom .dropdown {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .app-layout {
+                display: block;
+                min-height: auto;
+            }
+
+            .app-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: auto;
+                width: min(88vw, 310px);
+                height: 100vh;
+                padding: .75rem;
+                background: rgba(238, 248, 249, .72);
+                box-shadow: -18px 0 34px rgba(18, 59, 82, .12);
+            }
+
+            .sidebar-panel {
+                border-radius: 22px;
+            }
+
+            .sidebar-mobile-header {
+                display: flex;
+            }
+
+            .sidebar-user {
+                display: flex;
+            }
+
+            .app-content {
+                padding-top: 1rem;
+            }
+
+            .user-chip {
+                padding-left: .35rem;
+                border: 0;
+                background: transparent;
+            }
+
+            .user-chip-copy {
+                display: none;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .topbar-menu-btn {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .navbar-custom {
+                min-height: 64px;
+            }
+
+            .navbar-custom > .container {
+                padding-right: .8rem;
+                padding-left: .8rem;
+            }
+
+            .brand-logo {
+                font-size: 1.05rem;
+            }
+
+            .brand-logo i {
+                width: 34px;
+                height: 34px;
+                border-radius: 11px;
+            }
+
+            .topbar-menu-btn,
+            .topbar-icon-btn {
+                width: 36px;
+                height: 36px;
+                border-radius: 11px;
+            }
+
+            .app-flash {
+                padding-top: .75rem;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if current_user and current_user.compact_mode %}compact-mode{% endif %}">
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container">
+            {% if current_user %}
+                <button
+                    class="topbar-menu-btn d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#appSidebar"
+                    aria-controls="appSidebar"
+                    aria-label="باز کردن منوی سامانه"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            {% endif %}
+
+            <a class="navbar-brand brand-logo" href="{{ url_for('main.index') }}">
+                <i class="fa-solid fa-hospital-user"></i>
+                <span>پاکیار</span>
+            </a>
+
+            {% if current_user %}
+                <div class="d-flex align-items-center gap-2 gap-md-3">
+                    <div class="d-none d-md-block text-end">
+                        <div class="fw-bold">{{ current_user.full_name }}</div>
+                        <small class="text-muted">
+                            {% if current_user.role == "manager" %}
+                                {% if current_user.is_appointed_manager %}مسئول خدمات{% else %}مسئول خدمات · در انتظار انتصاب{% endif %}
+                            {% elif current_user.role == "supervisor" %}
+                                مسئول بخش
+                            {% elif current_user.role == "observer" %}
+                                ناظر اداره‌کل
+                            {% else %}
+                                پرسنل
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    {% if current_user.role != "manager" or current_user.is_appointed_manager %}
+                    <a class="topbar-icon-btn" href="{{ url_for('main.notifications_page') }}" title="اعلان‌ها">
+                        <i class="fa-regular fa-bell"></i>
+                        {% if unread_notification_count %}
+                            <span class="badge rounded-pill text-bg-danger">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            منو
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('main.index') }}">داشبورد</a></li>
+                            {% if current_user.role in ("staff", "supervisor") %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.add_report') }}">ثبت گزارش</a></li>
+                            {% endif %}
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center gap-3" href="{{ url_for('main.messages') }}">
+                                    <span>پیام‌ها و پیگیری مشکلات</span>
+                                    {% if unread_message_count %}
+                                        <span class="badge rounded-pill text-bg-danger">{{ unread_message_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center gap-3" href="{{ url_for('main.notifications_page') }}">
+                                    <span><i class="fa-solid fa-bell ms-1 text-warning"></i>اعلان‌های سامانه</span>
+                                    {% if unread_notification_count %}
+                                        <span class="badge rounded-pill text-bg-danger">{{ unread_notification_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.preferences') }}">
+                                    <i class="fa-solid fa-wand-magic-sparkles ms-1 text-primary"></i>
+                                    تنظیمات حساب و ظاهر
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.checklists') }}">
+                                    <i class="fa-solid fa-list-check ms-1 text-primary"></i>
+                                    چک‌لیست نظافت شیفت
+                                </a>
+                            </li>
+                            {% if current_user.role in ("manager", "observer", "supervisor") %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('main.workboard') }}">
+                                        <i class="fa-solid fa-inbox ms-1 text-danger"></i>
+                                        کارتابل پیگیری
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if current_user.role in ("manager", "supervisor", "observer", "staff") %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.reminders') }}"><i class="fa-solid fa-alarm-clock ms-1 text-warning"></i>یادآورهای نظافت</a></li>
+                            {% endif %}
+                            {% if current_user.role == "staff" %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.add_supply_usage') }}">ثبت مصرف شیفت</a></li>
+                            {% else %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.performance') }}">نمودار عملکرد</a></li>
+                                {% if current_user.role in ("supervisor", "observer") %}
+                                    <li><a class="dropdown-item" href="{{ url_for('main.supply_report') }}">گزارش هزینه و مصرف</a></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('main.inventory') }}">
+                                            <i class="fa-solid fa-triangle-exclamation ms-1 text-warning"></i>
+                                            مدیریت موجودی و هشدار کمبود
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+                            {% if current_user.role == "manager" %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.users') }}">مدیریت کاربران</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.sections') }}">مدیریت بخش‌ها</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.logs') }}">گزارش فعالیت‌ها</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.backups') }}">پشتیبان‌گیری سامانه</a></li>
+                            {% elif current_user.role == "observer" %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.observer') }}">داشبورد نظارتی</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.observer') }}#appoint-manager">انتصاب مسئول خدمات</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.sections') }}">مشاهدهٔ همهٔ بخش‌ها</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.logs') }}">گزارش فعالیت‌ها</a></li>
+                            {% elif current_user.role == "supervisor" %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.sections') }}">بخش‌های تحت نظارت</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger btn-sm topbar-logout">
+                        <i class="fa-solid fa-arrow-right-from-bracket ms-1"></i>
+                        خروج
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% if current_user %}
+        <div class="app-layout">
+            <aside class="app-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="appSidebar" aria-label="منوی اصلی سامانه">
+                <div class="sidebar-panel">
+                    <div class="sidebar-mobile-header">
+                        <span>منوی پاکیار</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="بستن منو"></button>
+                    </div>
+
+                    <div class="sidebar-user">
+                        <span class="sidebar-user-icon"><i class="fa-solid fa-hospital-user"></i></span>
+                        <span class="sidebar-user-copy">
+                            <strong>{{ current_user.full_name }}</strong>
+                            <small>
+                                {% if current_user.role == "manager" %}
+                                    مسئول خدمات
+                                {% elif current_user.role == "supervisor" %}
+                                    مسئول بخش
+                                {% elif current_user.role == "observer" %}
+                                    ناظر اداره‌کل
+                                {% elif current_user.role == 'oh_expert' %}
+                                    {{ role_label(current_user.role) }}
+                                {% else %}
+                                    پرسنل خدمات
+                                {% endif %}
+                            </small>
+                        </span>
+                    </div>
+
+                    <nav class="sidebar-nav">
+                        {% if current_user.role == 'oh_expert' %}
+                        <a class="sidebar-link {% if request.endpoint == 'workload.expert_people' or request.endpoint == 'workload.profile' %}active{% endif %}" href="{{ url_for('workload.expert_people') }}"><i class="fa-solid fa-user-shield"></i><span>مشخصات فردی پرسنل خدمات</span></a>
+                        <a class="sidebar-link {% if request.endpoint in ('wellbeing.feedback', 'wellbeing.feedback_detail') %}active{% endif %}" href="{{ url_for('wellbeing.feedback') }}"><i class="fa-solid fa-lock"></i><span>پیام خصوصی پرسنل خدمات</span></a>
+                        <a class="sidebar-link" href="{{ url_for('main.notifications_page') }}">اعلان‌ها</a>
+                        <a class="sidebar-link" href="{{ url_for('main.preferences') }}">تنظیمات حساب و ظاهر</a>
+                        {% else %}
+                        <a class="sidebar-link {% if request.blueprint == 'wellbeing' %}active{% endif %}" href="{{ url_for('wellbeing.index') }}"><i class="fa-solid fa-shield-heart"></i><span>سلامت و ایمنی کار</span></a>
+                        {% if current_user.role == "manager" and not current_user.is_appointed_manager %}
+                            <div class="sidebar-label">{% if active_observer_exists() %}در انتظار انتصاب{% else %}راه‌اندازی اولیه{% endif %}</div>
+                            {% if active_observer_exists() %}
+                                <a class="sidebar-link active" href="{{ url_for('main.manager_assignment_pending') }}">
+                                    <i class="fa-solid fa-hourglass-half"></i><span>وضعیت انتصاب</span>
+                                </a>
+                            {% else %}
+                                <a class="sidebar-link active" href="{{ url_for('main.users') }}">
+                                    <i class="fa-solid fa-user-shield"></i><span>ایجاد اولین ناظر</span>
+                                </a>
+                            {% endif %}
+                        {% else %}
+                        <a
+                            class="sidebar-link sidebar-link-today {% if request.endpoint == 'main.today_board' %}active{% endif %}"
+                            href="{{ url_for('main.today_board') }}"
+                        >
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <span>کارتابل هوشمند امروز</span>
+                            <i class="fa-solid fa-arrow-left sidebar-link-arrow"></i>
+                        </a>
+                        <div class="sidebar-label">دسترسی سریع</div>
+                        <a class="sidebar-link {% if request.endpoint in ('main.index', 'main.manager', 'main.supervisor', 'main.staff', 'main.observer') %}active{% endif %}" href="{{ url_for('main.index') }}">
+                            <i class="fa-solid fa-table-cells-large"></i>
+                            <span>داشبورد</span>
+                        </a>
+
+                        {% if current_user.role in ("staff", "supervisor") %}
+                            <a class="sidebar-link {% if request.endpoint == 'main.add_report' %}active{% endif %}" href="{{ url_for('main.add_report') }}">
+                                <i class="fa-solid fa-file-circle-plus"></i>
+                                <span>ثبت گزارش</span>
+                            </a>
+                        {% endif %}
+
+                        <a class="sidebar-link {% if request.endpoint in ('main.messages', 'main.message_detail') %}active{% endif %}" href="{{ url_for('main.messages') }}">
+                            <i class="fa-solid fa-comments"></i>
+                            <span>پیام‌ها و پیگیری</span>
+                            {% if unread_message_count %}
+                                <span class="badge rounded-pill text-bg-danger">{{ unread_message_count }}</span>
+                            {% endif %}
+                        </a>
+                        <a class="sidebar-link {% if request.endpoint in ('main.notifications_page', 'main.read_notification') %}active{% endif %}" href="{{ url_for('main.notifications_page') }}">
+                            <i class="fa-regular fa-bell"></i>
+                            <span>اعلان‌ها</span>
+                            {% if unread_notification_count %}
+                                <span class="badge rounded-pill text-bg-danger">{{ unread_notification_count }}</span>
+                            {% endif %}
+                        </a>
+                        {% if current_user.role in ('manager', 'supervisor', 'observer') %}
+                        <a class="sidebar-link {% if request.blueprint == 'workload' %}active{% endif %}" href="{{ url_for('workload.index') }}">
+                            <i class="fa-solid fa-scale-balanced"></i><span>تقسیم بار کاری</span>
+                        </a>
+                        {% endif %}
+                        <div class="sidebar-label">عملیات روزانه</div>
+                        <a class="sidebar-link {% if request.endpoint in ('main.checklists', 'main.add_checklist_item', 'main.edit_checklist_item', 'main.delete_checklist_item') %}active{% endif %}" href="{{ url_for('main.checklists') }}">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>چک‌لیست نظافت شیفت</span>
+                        </a>
+
+                        {% if current_user.role in ("manager", "observer", "supervisor") %}
+                            <a class="sidebar-link {% if request.endpoint in ('main.workboard', 'main.message_detail') %}active{% endif %}" href="{{ url_for('main.workboard') }}">
+                                <i class="fa-solid fa-inbox"></i>
+                                <span>کارتابل پیگیری</span>
+                                {% if workboard_unread_count|default(0) %}
+                                    <span class="badge rounded-pill text-bg-danger">{{ workboard_unread_count }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                        <a class="sidebar-link {% if request.endpoint in ('main.reminders', 'main.add_reminder', 'main.toggle_reminder', 'main.complete_reminder') %}active{% endif %}" href="{{ url_for('main.reminders') }}">
+                            <i class="fa-solid fa-bell-concierge"></i>
+                            <span>یادآورهای نظافت</span>
+                        </a>
+
+                        {% if current_user.role == "staff" %}
+                            <a class="sidebar-link {% if request.endpoint == 'main.add_supply_usage' %}active{% endif %}" href="{{ url_for('main.add_supply_usage') }}">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                                <span>ثبت مصرف شیفت</span>
+                            </a>
+                        {% else %}
+                            <a class="sidebar-link {% if request.endpoint == 'main.performance' %}active{% endif %}" href="{{ url_for('main.performance') }}">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>نمودار عملکرد</span>
+                            </a>
+                                {% if current_user.role in ("supervisor", "observer") %}
+                                <a class="sidebar-link {% if request.endpoint == 'main.supply_report' %}active{% endif %}" href="{{ url_for('main.supply_report') }}">
+                                    <i class="fa-solid fa-chart-pie"></i>
+                                    <span>{% if current_user.role == "observer" %}گزارش سراسری مصرف{% else %}گزارش مصرف و هزینه{% endif %}</span>
+                                </a>
+                                <a class="sidebar-link {% if request.endpoint == 'main.inventory' %}active{% endif %}" href="{{ url_for('main.inventory') }}">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span>{% if current_user.role == "observer" %}پایش موجودی و کمبود{% else %}موجودی و کمبود{% endif %}</span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if current_user.role == "manager" %}
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-label">مدیریت سامانه</div>
+                            <a class="sidebar-link {% if request.endpoint in ('main.users', 'main.add_user', 'main.edit_user') %}active{% endif %}" href="{{ url_for('main.users') }}">
+                                <i class="fa-solid fa-users-gear"></i>
+                                <span>مدیریت کاربران</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint in ('main.sections', 'main.add_section') %}active{% endif %}" href="{{ url_for('main.sections') }}">
+                                <i class="fa-solid fa-hospital"></i>
+                                <span>مدیریت بخش‌ها</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint == 'main.logs' %}active{% endif %}" href="{{ url_for('main.logs') }}">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <span>گزارش فعالیت‌ها</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint in ('main.backups', 'main.create_manual_backup', 'main.download_backup', 'main.validate_backup_file') %}active{% endif %}" href="{{ url_for('main.backups') }}">
+                                <i class="fa-solid fa-database"></i>
+                                <span>پشتیبان‌گیری سامانه</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint == 'main.preferences' %}active{% endif %}" href="{{ url_for('main.preferences') }}">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>تنظیمات حساب و ظاهر</span>
+                            </a>
+                        {% elif current_user.role == "observer" %}
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-label">نظارت اداره‌کل</div>
+                            <a class="sidebar-link {% if request.endpoint == 'main.observer' %}active{% endif %}" href="{{ url_for('main.observer') }}">
+                                <i class="fa-solid fa-chart-line"></i><span>داشبورد نظارتی</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint == 'main.appoint_manager' %}active{% endif %}" href="{{ url_for('main.observer') }}#appoint-manager">
+                                <i class="fa-solid fa-user-check"></i><span>انتصاب مسئول خدمات</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint == 'main.sections' %}active{% endif %}" href="{{ url_for('main.sections') }}">
+                                <i class="fa-solid fa-hospital"></i><span>مشاهدهٔ همهٔ بخش‌ها</span>
+                            </a>
+                            <a class="sidebar-link {% if request.endpoint == 'main.logs' %}active{% endif %}" href="{{ url_for('main.logs') }}">
+                                <i class="fa-solid fa-clock-rotate-left"></i><span>گزارش فعالیت‌ها</span>
+                            </a>
+                        {% elif current_user.role == "supervisor" %}
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-label">بخش‌های تحت نظارت</div>
+                            <a class="sidebar-link {% if request.endpoint in ('main.sections', 'main.add_section') %}active{% endif %}" href="{{ url_for('main.sections') }}">
+                                <i class="fa-solid fa-hospital"></i>
+                                <span>مشاهده بخش‌ها</span>
+                            </a>
+                        {% else %}
+                            <div class="sidebar-divider"></div>
+                            <div class="sidebar-label">حساب کاربری</div>
+                            <a class="sidebar-link {% if request.endpoint == 'main.preferences' %}active{% endif %}" href="{{ url_for('main.preferences') }}">
+                                <i class="fa-solid fa-user-gear"></i>
+                                <span>تنظیمات حساب و ظاهر</span>
+                            </a>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                    </nav>
+
+                    <div class="sidebar-footer">
+                        <div class="sidebar-status mb-2">
+                            <span class="sidebar-status-dot"></span>
+                            <span>سامانه فعال و آماده ثبت اطلاعات</span>
+                        </div>
+                        <a class="sidebar-link text-danger" href="{{ url_for('main.logout') }}">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i>
+                            <span>خروج از حساب</span>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="app-main">
+    {% endif %}
+
+    <div id="connectionBanner" class="connection-banner" role="status" aria-live="polite">
+        <i class="fa-solid fa-wifi ms-1"></i>
+        اتصال شبکه قطع شده است؛ اطلاعات ذخیره‌نشده را بعد از برقراری اتصال دوباره ارسال کنید.
+    </div>
+
+    <div class="{% if current_user %}container-fluid app-flash{% else %}container mt-3{% endif %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="{% if current_user %}app-content{% else %}container my-4 flex-grow-1{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="text-center py-3 text-muted border-top mt-auto bg-white {% if current_user %}app-footer{% endif %}">
+        <small>© سامانه جامع مدیریت بهداشت و خدمات پاکیار</small>
+    </footer>
+
+    {% if current_user %}
+            </div>
+        </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+        const attachCsrfToken = (form) => {
+            if (!form || (form.method || "get").toLowerCase() !== "post" || !csrfToken) {
+                return;
+            }
+            if (!form.querySelector('input[name="csrf_token"]')) {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "csrf_token";
+                input.value = csrfToken;
+                form.appendChild(input);
+            }
+        };
+        document.querySelectorAll("form").forEach(attachCsrfToken);
+        document.addEventListener("submit", (event) => attachCsrfToken(event.target), true);
+
+        document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+            const input = toggle.closest(".password-field")?.querySelector("input");
+            const icon = toggle.querySelector("i");
+
+            if (!input) {
+                return;
+            }
+
+            toggle.addEventListener("click", () => {
+                const isHidden = input.type === "password";
+                input.type = isHidden ? "text" : "password";
+                toggle.setAttribute("aria-pressed", String(isHidden));
+                toggle.setAttribute("aria-label", isHidden ? "مخفی کردن رمز عبور" : "نمایش رمز عبور");
+
+                if (icon) {
+                    icon.classList.toggle("fa-eye", !isHidden);
+                    icon.classList.toggle("fa-eye-slash", isHidden);
+                }
+            });
+        });
+
+        const connectionBanner = document.getElementById("connectionBanner");
+        const syncConnectionStatus = () => {
+            connectionBanner?.classList.toggle("is-visible", !navigator.onLine);
+        };
+        window.addEventListener("online", syncConnectionStatus);
+        window.addEventListener("offline", syncConnectionStatus);
+        syncConnectionStatus();
+
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("{{ url_for('main.service_worker') }}", {scope: "/"}).catch(() => {
+                    // نصب برنامه اختیاری است؛ خطای آن نباید کار سامانه را متوقف کند.
+                });
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

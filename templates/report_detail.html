@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}جزئیات گزارش شماره {{ report.id }} | پاکیار{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">جزئیات گزارش شماره {{ report.id }}</h2>
+        <p class="text-muted mb-0">اطلاعات ثبت و نتیجهٔ بررسی گزارش</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">بازگشت به داشبورد</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card page-card p-4 h-100">
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">ثبت‌کننده</small>
+                    <strong>{{ report.user.full_name if report.user else "-" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">بخش</small>
+                    <strong>{{ report.section.name if report.section else "-" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">شیفت</small>
+                    <strong>{{ report.shift or "-" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">تاریخ ثبت</small>
+                    <strong>{{ report.created_at|jalali }}</strong>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted d-block mb-2">وضعیت</small>
+                    {% if report.resubmission_source and report.status == "approved" %}
+                        <span class="soft-badge soft-purple">تأیید پس از ثبت مجدد</span>
+                    {% elif report.resubmission_source and report.status == "rejected" %}
+                        <span class="soft-badge soft-danger">رد پس از ثبت مجدد</span>
+                    {% elif report.resubmission_source or report.status == "resubmitted" %}
+                        <span class="soft-badge soft-info">ثبت مجدد شده</span>
+                    {% elif report.status == "approved" %}
+                        <span class="soft-badge soft-success">تأیید شده</span>
+                    {% elif report.status == "rejected" %}
+                        <span class="soft-badge soft-danger">رد شده</span>
+                    {% else %}
+                        <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="fw-bold mt-4">شرح فعالیت</h5>
+            <div class="report-description text-secondary">{{ report.description or "توضیحی ثبت نشده است." }}</div>
+
+            {% if report.supervisor_feedback %}
+            <div class="alert {% if report.resubmission_source and report.status == 'approved' %}alert-violet{% elif report.status == 'rejected' %}alert-danger{% else %}alert-info{% endif %} mt-4 mb-0">
+                {% if report.resubmission_source and report.status == "approved" %}
+                    <strong>نتیجهٔ ثبت مجدد:</strong>
+                    این گزارش پس از اصلاح و ثبت مجدد تأیید شده است.
+                    <div class="report-description mt-2">{{ report.supervisor_feedback }}</div>
+                {% else %}
+                    <strong>بازخورد مسئول بخش:</strong>
+                    <div class="report-description mt-2">{{ report.supervisor_feedback }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if current_user.role == "staff" and report.status == "rejected" %}
+                <a class="btn btn-danger mt-4" href="{{ url_for('main.resubmit_report', report_id=report.id) }}">
+                    <i class="fa-solid fa-rotate-right ms-1"></i>
+                    اصلاح و ثبت مجدد گزارش
+                </a>
+            {% endif %}
+
+            {% if report.reviewed_at %}
+                <small class="text-muted d-block mt-3">
+                    آخرین بررسی: {{ report.reviewed_at|jalali }}
+                </small>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card page-card p-4 mb-4">
+            <h5 class="fw-bold mb-3">تصویر پیوست</h5>
+            {% if report.image_file %}
+                <a href="{{ url_for('main.uploaded_file', filename=report.image_file) }}" target="_blank" rel="noopener">
+                    <img class="img-fluid w-100 report-image" src="{{ url_for('main.uploaded_file', filename=report.image_file) }}" alt="تصویر گزارش">
+                </a>
+            {% else %}
+                <div class="text-center text-muted py-5">تصویری برای این گزارش ثبت نشده است.</div>
+            {% endif %}
+        </div>
+
+        {% if current_user.role in ["manager", "supervisor"] %}
+            <div class="card page-card p-4">
+                <h5 class="fw-bold mb-3">بررسی گزارش</h5>
+                <form method="post" action="{{ url_for('main.update_report_status', report_id=report.id) }}">
+                    <label class="form-label" for="status">وضعیت</label>
+                    <select class="form-select mb-3" id="status" name="status" required>
+                        <option value="pending" {% if report.status in ["pending", "resubmitted"] %}selected{% endif %}>در انتظار بررسی</option>
+                        <option value="approved" {% if report.status == "approved" %}selected{% endif %}>تأیید شده</option>
+                        <option value="rejected" {% if report.status == "rejected" %}selected{% endif %}>رد شده</option>
+                    </select>
+
+                    <label class="form-label" for="supervisor_feedback">بازخورد</label>
+                    <textarea class="form-control mb-3" id="supervisor_feedback" name="supervisor_feedback" rows="4" placeholder="برای رد گزارش، توضیح مسئول بخش الزامی است.">{{ report.supervisor_feedback or "" }}</textarea>
+
+                    <button class="btn btn-primary w-100" type="submit">
+                        <i class="fa-solid fa-floppy-disk ms-1"></i>
+                        ذخیرهٔ نتیجهٔ بررسی
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

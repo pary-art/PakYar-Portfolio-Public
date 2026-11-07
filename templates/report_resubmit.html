@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت مجدد گزارش | پاکیار{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card page-card p-4">
+            <div class="alert alert-danger rounded-4">
+                <strong>این گزارش رد شده است.</strong>
+                <div class="mt-2">بازخورد مسئول بخش: {{ original.supervisor_feedback or "توضیحی ثبت نشده است." }}</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">ثبت مجدد گزارش</h2>
+                    <p class="text-muted mb-0">اصلاحات لازم را انجام دهید و گزارش را دوباره برای مسئول بخش ارسال کنید.</p>
+                </div>
+                <i class="fa-solid fa-rotate-right text-primary fs-2"></i>
+            </div>
+
+            <form method="post" action="{{ url_for('main.resubmit_report', report_id=original.id) }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="section_id">بخش</label>
+                        <select class="form-select" id="section_id" name="section_id" required>
+                            {% for section in sections %}
+                                <option value="{{ section.id }}" {% if section.id == original.section_id %}selected{% endif %}>
+                                    {{ section.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift" required>
+                            <option value="صبح" {% if original.shift == "صبح" %}selected{% endif %}>صبح</option>
+                            <option value="عصر" {% if original.shift == "عصر" %}selected{% endif %}>عصر</option>
+                            <option value="شب" {% if original.shift == "شب" %}selected{% endif %}>شب</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="description">شرح اصلاح‌شدهٔ فعالیت</label>
+                        <textarea class="form-control" id="description" name="description" rows="7" required>{{ original.description or "" }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="image">تصویر جدید، در صورت نیاز</label>
+                        <input class="form-control" id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.gif,.webp">
+                        <div class="form-text">اگر تصویر جدید انتخاب نکنید، تصویر قبلی کپی می‌شود.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-paper-plane ms-1"></i>
+                        ثبت مجدد و ارسال
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.staff') }}">انصراف</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}اعلان‌های سامانه | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">اعلان‌های سامانه</h2>
+            <p class="mb-0 opacity-75">رویدادهای مهم مربوط به گزارش‌ها، مصرف و پیام‌های شما</p>
+        </div>
+        <form method="post" action="{{ url_for('main.read_all_notifications') }}">
+            <button class="btn btn-light" type="submit">
+                <i class="fa-solid fa-check-double ms-1"></i>
+                خواندن همه
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card page-card p-4">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>عنوان</th>
+                    <th>شرح</th>
+                    <th>تاریخ</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for notification in notifications %}
+                    <tr class="{% if not notification.is_read %}message-unread{% endif %}">
+                        <td class="fw-bold">
+                            {{ notification.title }}
+                            {% if not notification.is_read %}
+                                <span class="soft-badge soft-danger me-1">جدید</span>
+                            {% endif %}
+                        </td>
+                        <td class="report-description" style="min-width: 320px;">
+                            {{ notification.body or "-" }}
+                        </td>
+                        <td>{{ notification.created_at|jalali }}</td>
+                        <td>
+                            {% if notification.is_read %}
+                                <span class="soft-badge soft-secondary">خوانده شده</span>
+                            {% else %}
+                                <span class="soft-badge soft-warning">خوانده نشده</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if notification.target_url %}
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.read_notification', notification_id=notification.id) }}">
+                                    مشاهده
+                                </a>
+                            {% else %}
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.read_notification', notification_id=notification.id) }}">
+                                    علامت‌گذاری
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="fa-regular fa-bell-slash fs-2 d-block mb-2"></i>
+                            اعلان جدیدی وجود ندارد.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}گزارش ماهانه مصرف | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">گزارش ماهانهٔ مصرف</h2>
+            <p class="mb-0 opacity-75">مواد شوینده، لوازم و تجهیزات ثبت‌شده در {{ selected_month_label }}</p>
+        </div>
+        <i class="fa-solid fa-chart-column fs-1 opacity-75"></i>
+    </div>
+</div>
+
+<div class="card page-card p-4 mb-4">
+    <form method="get" action="{{ url_for('main.supply_report') }}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label" for="jalali_month">ماه شمسی گزارش</label>
+            <input
+                class="form-control"
+                type="text"
+                id="jalali_month"
+                name="jalali_month"
+                value="{{ selected_month }}"
+                inputmode="numeric"
+                pattern="[0-9۰-۹]{4}[-/][0-9۰-۹]{1,2}"
+                placeholder="۱۴۰۵-۰۵"
+                dir="ltr"
+                required
+            >
+            <div class="form-text">نمونه: ۱۴۰۵-۰۵ یا 1405-05</div>
+        </div>
+        <div class="col-md-auto">
+            <button class="btn btn-primary" type="submit">
+                <i class="fa-solid fa-filter ms-1"></i>
+                نمایش گزارش
+            </button>
+        </div>
+        <div class="col-md-auto">
+            <a class="btn btn-outline-success" href="{{ url_for('main.export_supply_report', jalali_month=selected_month) }}">
+                <i class="fa-solid fa-file-csv ms-1"></i>
+                دریافت CSV ماه
+            </a>
+        </div>
+        <div class="col-md-auto">
+            <a class="btn btn-outline-primary" href="{{ url_for('main.export_supply_report_xlsx', jalali_month=selected_month) }}">
+                <i class="fa-solid fa-file-excel ms-1"></i>
+                دریافت Excel
+            </a>
+        </div>
+        <div class="col-md-auto">
+            <a class="btn btn-outline-danger" href="{{ url_for('main.export_supply_report_pdf', jalali_month=selected_month) }}">
+                <i class="fa-solid fa-file-pdf ms-1"></i>
+                دریافت PDF
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card page-card p-3 h-100 border-primary">
+            <small class="text-muted">کل ثبت‌های مصرف</small>
+            <div class="fs-3 fw-bold text-primary">{{ usages|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card page-card p-3 h-100 border-success">
+            <small class="text-muted">هزینهٔ تقریبی ثبت‌شده</small>
+            <div class="fs-3 fw-bold text-success">
+                {{ "{:,.0f}".format(usages|sum(attribute="estimated_cost")) }} تومان
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card page-card p-3 h-100 border-warning">
+            <small class="text-muted">در انتظار بررسی</small>
+            <div class="fs-3 fw-bold text-warning">
+                {{ usages|selectattr("status", "equalto", "pending")|list|length }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card page-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">نمودار مصرف بخش‌ها</h4>
+            <p class="text-muted mb-0">تعداد موارد ثبت‌شدهٔ مواد و تجهیزات در هر بخش</p>
+        </div>
+        <span class="badge text-bg-light">{{ usages|length }} ثبت مصرف</span>
+    </div>
+
+    {% if section_data %}
+        <div style="height: 390px;">
+            <canvas
+                id="supplyChart"
+                role="img"
+                aria-label="نمودار ماهانه تعداد موارد مواد شوینده و تجهیزات مصرف‌شده در بخش‌ها"
+            ></canvas>
+        </div>
+    {% else %}
+        <div class="text-center text-muted py-5">برای این ماه داده‌ای ثبت نشده است.</div>
+    {% endif %}
+</div>
+
+<div class="card page-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">خلاصه مصرف و هزینه به تفکیک بخش</h4>
+            <p class="text-muted mb-0">هزینه‌ها بر اساس مبلغ تقریبی ثبت‌شده در هر شیفت محاسبه شده‌اند.</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>بخش</th>
+                    <th>تعداد ثبت</th>
+                    <th>تعداد اقلام مواد</th>
+                    <th>تعداد اقلام تجهیزات</th>
+                    <th>هزینهٔ تقریبی</th>
+                    <th>وضعیت بررسی</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in section_data %}
+                    <tr>
+                        <td class="fw-bold">{{ item.name }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.materials }}</td>
+                        <td>{{ item.equipment }}</td>
+                        <td>{{ "{:,.0f}".format(item.cost) }} تومان</td>
+                        <td>
+                            <span class="soft-badge soft-success">{{ item.reviewed }} بررسی‌شده</span>
+                            {% if item.pending %}
+                                <span class="soft-badge soft-warning">{{ item.pending }} در انتظار</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">داده‌ای برای این ماه وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card page-card p-4">
+    <h4 class="fw-bold mb-3">جزئیات ثبت‌های ماه</h4>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>تاریخ</th>
+                    <th>پرسنل</th>
+                    <th>بخش</th>
+                    <th>شیفت</th>
+                    <th>مواد شوینده</th>
+                    <th>تجهیزات</th>
+                    <th>هزینهٔ تقریبی</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usage in usages %}
+                    <tr>
+                        <td>{{ usage.created_at|jalali }}</td>
+                        <td>{{ usage.user.full_name if usage.user else "-" }}</td>
+                        <td>{{ usage.section.name if usage.section else "-" }}</td>
+                        <td>{{ usage.shift }}</td>
+                        <td class="report-description" style="min-width: 220px;">{{ usage.materials }}</td>
+                        <td class="report-description" style="min-width: 220px;">{{ usage.equipment or "-" }}</td>
+                        <td>{{ "{:,.0f}".format(usage.estimated_cost or 0) }} تومان</td>
+                        <td>
+                            {% if usage.status == "reviewed" %}
+                                <span class="soft-badge soft-success">بررسی شده</span>
+                            {% else %}
+                                <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">ثبت مصرفی برای این ماه وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if section_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const sectionData = {{ section_data|tojson }};
+    const supplyCanvas = document.getElementById("supplyChart");
+
+    if (supplyCanvas && sectionData.length) {
+        new Chart(supplyCanvas, {
+            type: "bar",
+            data: {
+                labels: sectionData.map(item => item.name),
+                datasets: [
+                    {
+                        label: "مواد شوینده و مصرفی",
+                        data: sectionData.map(item => item.materials),
+                        backgroundColor: "#0f766e",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "لوازم و تجهیزات",
+                        data: sectionData.map(item => item.equipment),
+                        backgroundColor: "#2b7ea8",
+                        borderRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        rtl: true,
+                        textDirection: "rtl",
+                        labels: { usePointStyle: true, padding: 18 },
+                    },
+                    tooltip: {
+                        rtl: true,
+                        textDirection: "rtl",
+                        callbacks: {
+                            label: context => `${context.dataset.label}: ${context.raw}`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: { autoSkip: false, maxRotation: 40, minRotation: 0 },
+                        title: { display: true, text: "بخش" },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                        title: { display: true, text: "تعداد موارد ثبت‌شده" },
+                    },
+                },
+            },
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

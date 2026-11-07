@@ -1,0 +1,39 @@
+# Local data, credentials, and real-world records
+instance/
+instance*/
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+*.secret_key
+*.dpapi
+*.pbk
+*.log
+*.zip
+*.bak
+*.backup*
+
+# Uploaded files can contain personal information
+static/uploads/
+
+# Local Python/build files
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.spec
+*.exe
+*.dll
+*.pyd
+
+# Operating-system/editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

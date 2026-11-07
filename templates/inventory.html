@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت موجودی بخش‌ها | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">{% if can_manage %}مدیریت موجودی بخش‌ها{% else %}پایش موجودی بخش‌ها{% endif %}</h2>
+            <p class="mb-0 opacity-75">{% if can_manage %}موجودی فعلی و حد هشدار مواد شوینده، مصرفی و تجهیزات را ثبت کنید.{% else %}مشاهدهٔ موجودی و هشدار کمبود در همهٔ بخش‌ها؛ این صفحه فقط برای نظارت است.{% endif %}</p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('main.supervisor' if can_manage else 'main.observer') }}">
+            <i class="fa-solid fa-arrow-right ms-1"></i>
+            بازگشت به پنل
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if can_manage %}<div class="col-xl-4">
+        <details class="glass-panel" open>
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-plus-circle"></i>افزودن قلم موجودی</span>
+                    <span class="glass-panel-caption">برای هر بخش، مقدار فعلی و حد هشدار را تعیین کنید.</span>
+                </span>
+            </summary>
+            <div class="glass-panel-body">
+                <form method="post" action="{{ url_for('main.inventory') }}">
+                    <div class="mb-3">
+                        <label class="form-label" for="section_id">بخش</label>
+                        <select class="form-select" id="section_id" name="section_id" required>
+                            <option value="">انتخاب بخش</option>
+                            {% for section in sections %}
+                                <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% else %}
+                                <option value="">بخشی برای شما اختصاص داده نشده است</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="name">نام قلم</label>
+                        <input class="form-control" id="name" name="name" maxlength="160" placeholder="مثلاً مایع ضدعفونی‌کننده" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="category">نوع قلم</label>
+                        <select class="form-select" id="category" name="category">
+                            {% for value, label in inventory_categories.items() %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label" for="unit">واحد</label>
+                            <input class="form-control" id="unit" name="unit" value="عدد" placeholder="عدد، لیتر، بسته" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="current_quantity">موجودی فعلی</label>
+                            <input class="form-control" id="current_quantity" name="current_quantity" type="number" min="0" step="0.01" value="0" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label class="form-label" for="minimum_quantity">حد هشدار کمبود</label>
+                        <input class="form-control" id="minimum_quantity" name="minimum_quantity" type="number" min="0" step="0.01" value="1" required>
+                        <div class="form-text">وقتی موجودی به این مقدار یا کمتر برسد، هشدار نمایش داده می‌شود.</div>
+                    </div>
+
+                    <button class="btn btn-primary w-100" type="submit" {% if not sections %}disabled{% endif %}>
+                        <i class="fa-solid fa-floppy-disk ms-1"></i>
+                        ثبت قلم موجودی
+                    </button>
+                </form>
+            </div>
+        </details>
+    </div>{% endif %}
+
+    <div class="{% if can_manage %}col-xl-8{% else %}col-12{% endif %}">
+        <details class="glass-panel" open>
+            <summary>
+                <span>
+                    <span class="glass-panel-title"><i class="fa-solid fa-boxes-stacked"></i>موجودی ثبت‌شده</span>
+                    <span class="glass-panel-caption">مقادیر کم با رنگ قرمز یا زرد مشخص‌اند.{% if can_manage %} می‌توانید آن‌ها را ویرایش کنید.{% endif %}</span>
+                </span>
+                <span class="soft-badge soft-info">{{ inventory_items|length }} قلم</span>
+            </summary>
+            <div class="glass-panel-body">
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>بخش</th>
+                                <th>قلم</th>
+                                <th>نوع</th>
+                                <th>موجودی</th>
+                                <th>حد هشدار</th>
+                                <th>وضعیت</th>
+                                {% if can_manage %}<th>عملیات</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory_items %}
+                                <tr class="{% if item.current_quantity <= 0 %}table-danger{% elif item.current_quantity <= item.minimum_quantity %}table-warning{% endif %}">
+                                    <td>{{ item.section.name }}</td>
+                                    <td>
+                                        {% if can_manage %}
+                                        <input class="form-control form-control-sm" name="name" form="inventory-update-{{ item.id }}" value="{{ item.name }}" maxlength="160" required>
+                                        <input class="form-control form-control-sm mt-2" name="unit" form="inventory-update-{{ item.id }}" value="{{ item.unit }}" placeholder="واحد" required>
+                                        {% else %}{{ item.name }}<small class="d-block text-muted">{{ item.unit }}</small>{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if can_manage %}
+                                        <select class="form-select form-select-sm" name="category" form="inventory-update-{{ item.id }}">
+                                            {% for value, label in inventory_categories.items() %}
+                                                <option value="{{ value }}" {% if item.category == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% else %}{{ inventory_categories.get(item.category, item.category) }}{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if can_manage %}
+                                        <input class="form-control form-control-sm" name="current_quantity" form="inventory-update-{{ item.id }}" type="number" min="0" step="0.01" value="{{ item.current_quantity }}" required>
+                                        {% else %}{{ item.current_quantity }}{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if can_manage %}
+                                        <input class="form-control form-control-sm" name="minimum_quantity" form="inventory-update-{{ item.id }}" type="number" min="0" step="0.01" value="{{ item.minimum_quantity }}" required>
+                                        {% else %}{{ item.minimum_quantity }}{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.current_quantity <= 0 %}
+                                            <span class="soft-badge soft-danger">تمام‌شده</span>
+                                        {% elif item.current_quantity <= item.minimum_quantity %}
+                                            <span class="soft-badge soft-warning">کمبود</span>
+                                        {% else %}
+                                            <span class="soft-badge soft-success">مناسب</span>
+                                        {% endif %}
+                                    </td>
+                                    {% if can_manage %}<td class="text-nowrap">
+                                        <form id="inventory-update-{{ item.id }}" method="post" action="{{ url_for('main.update_inventory', item_id=item.id) }}"></form>
+                                        <button class="btn btn-sm btn-outline-primary" type="submit" form="inventory-update-{{ item.id }}">ذخیره</button>
+                                        <form method="post" action="{{ url_for('main.delete_inventory', item_id=item.id) }}" class="mt-1" onsubmit="return confirm('این قلم از موجودی حذف شود؟');">
+                                            <button class="btn btn-sm btn-outline-danger w-100" type="submit">حذف</button>
+                                        </form>
+                                    </td>{% endif %}
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="{% if can_manage %}7{% else %}6{% endif %}" class="text-center text-muted py-5">
+                                        هنوز موجودی‌ای برای بخش‌های شما ثبت نشده است.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+{% endblock %}

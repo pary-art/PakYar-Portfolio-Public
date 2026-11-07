@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}کارتابل پیگیری | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">کارتابل پیگیری</h2>
+            <p class="mb-0 opacity-75">
+                {% if current_user.role in ("manager", "observer") %}
+                    نمای کامل کارهای ناقص و موارد نیازمند اقدام در همه بخش‌ها
+                {% else %}
+                    کارهای ناقص و موارد نیازمند اقدام در بخش‌های تحت نظارت شما
+                {% endif %}
+            </p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('main.index') }}">
+            <i class="fa-solid fa-arrow-right ms-1"></i>
+            بازگشت به داشبورد
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #b91c1c, #991b1b);">
+            <h6>کل موارد باز</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.total }}</h2>
+            <i class="fa-solid fa-inbox stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #d97706, #b45309);">
+            <h6>گزارش‌ها</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.reports }}</h2>
+            <i class="fa-solid fa-file-lines stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+            <h6>چک‌لیست‌های ناقص</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.checklists }}</h2>
+            <i class="fa-solid fa-list-check stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #0f766e, #115e59);">
+            <h6>مصرف‌های بررسی‌نشده</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.supplies }}</h2>
+            <i class="fa-solid fa-boxes-stacked stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #7c3aed, #6d28d9);">
+            <h6>پیام‌های باز</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.messages }}</h2>
+            <i class="fa-solid fa-comments stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="stat-card" style="background: linear-gradient(135deg, #be185d, #9d174d);">
+            <h6>تحویل شیفت</h6>
+            <h2 class="fw-bold my-1">{{ workboard.summary.handoffs }}</h2>
+            <i class="fa-solid fa-right-left stat-icon"></i>
+        </div>
+    </div>
+    {% if current_user.role == "supervisor" %}
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ea580c, #c2410c);">
+                <h6>هشدار کمبود</h6>
+                <h2 class="fw-bold my-1">{{ workboard.summary.inventory }}</h2>
+                <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if not workboard.summary.total %}
+    <div class="glass-card p-5 text-center">
+        <i class="fa-solid fa-circle-check text-success fs-1 d-block mb-3"></i>
+        <h4 class="fw-bold">کارتابل شما مرتب است</h4>
+        <p class="text-muted mb-0">در حال حاضر مورد ناقص یا نیازمند پیگیری در محدوده دسترسی شما وجود ندارد.</p>
+    </div>
+{% endif %}
+
+{% if workboard.report_items %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-file-circle-exclamation"></i>
+                گزارش‌های نیازمند پیگیری
+            </span>
+            <span class="glass-panel-caption">گزارش‌های عادی، ثبت‌مجددشده و ردشده‌ای که هنوز اقدام لازم دارند.</span>
+        </span>
+        <span class="soft-badge soft-danger">{{ workboard.report_items|length }} مورد</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>نوع مورد</th>
+                        <th>پرسنل</th>
+                        <th>بخش</th>
+                        <th>شرح</th>
+                        <th>زمان ثبت</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in workboard.report_items %}
+                        <tr class="{{ item.row_class }}">
+                            <td class="fw-bold">{{ item.title }}</td>
+                            <td>{{ item.report.user.full_name if item.report.user else "-" }}</td>
+                            <td>{{ item.report.section.name if item.report.section else "-" }}</td>
+                            <td class="report-description" style="min-width: 220px;">
+                                {{ item.report.description or "-" }}
+                            </td>
+                            <td><small>{{ item.report.created_at|jalali }}</small></td>
+                            <td>
+                                {% if item.status == "rejected" %}
+                                    <span class="soft-badge soft-danger">{{ item.status_label }}</span>
+                                {% elif item.status == "resubmitted" %}
+                                    <span class="soft-badge soft-info">{{ item.status_label }}</span>
+                                {% else %}
+                                    <span class="soft-badge soft-warning">{{ item.status_label }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.report_detail', report_id=item.report.id) }}">
+                                    <i class="fa-solid fa-eye ms-1"></i>
+                                    بررسی
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if workboard.checklist_cards %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-list-check"></i>
+                چک‌لیست‌های ناقص امروز
+            </span>
+            <span class="glass-panel-caption">شیفت‌هایی که هنوز کامل نشده‌اند یا برای آن‌ها پرسنل تعیین نشده است.</span>
+        </span>
+        <span class="soft-badge soft-danger">{{ workboard.checklist_cards|length }} برنامه</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="row g-3">
+            {% for card in workboard.checklist_cards %}
+                <div class="col-xl-6">
+                    <article class="today-board-card status-{{ card.status }} h-100">
+                        <div class="today-board-card-header">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-bold">{{ card.section.name }}</div>
+                                    <small class="text-muted">{{ card.weekday_label }} · شیفت {{ card.shift }}</small>
+                                </div>
+                                {% if card.status == "unassigned" %}
+                                    <span class="soft-badge soft-warning">بدون پرسنل</span>
+                                {% else %}
+                                    <span class="soft-badge soft-danger">ناقص</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                {% if card.daily_count %}
+                                    <span class="soft-badge soft-info">روزانه: {{ card.daily_count }}</span>
+                                {% endif %}
+                                {% if card.weekly_count %}
+                                    <span class="soft-badge soft-purple">هفتگی: {{ card.weekly_count }}</span>
+                                {% endif %}
+                                <span class="soft-badge soft-secondary">پرسنل: {{ card.staff_count }}</span>
+                            </div>
+                        </div>
+                        <div class="today-board-card-body">
+                            {% if card.status == "unassigned" %}
+                                <p class="text-warning small mb-3">
+                                    <i class="fa-solid fa-triangle-exclamation ms-1"></i>
+                                    برای این برنامه هنوز پرسنلی به بخش اختصاص داده نشده است.
+                                </p>
+                            {% else %}
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>پیشرفت</span>
+                                    <strong>{{ card.completed_checks }} از {{ card.total_checks }} · {{ card.rate }}٪</strong>
+                                </div>
+                                <div class="progress today-board-progress mb-3">
+                                    <div class="progress-bar bg-danger" style="width: {{ card.rate }}%;"></div>
+                                </div>
+                                {% if card.pending_items %}
+                                    <div class="small fw-bold mb-1">موارد باقی‌مانده</div>
+                                    {% for item in card.pending_items[:3] %}
+                                        <div class="today-board-item">
+                                            <span class="small">{{ item.title }}</span>
+                                            <i class="fa-solid fa-circle-exclamation text-danger"></i>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endif %}
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                {% if card.daily_count %}
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ card.daily_url }}">چک‌لیست روزانه</a>
+                                {% endif %}
+                                {% if card.weekly_count %}
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ card.weekly_url }}">چک‌لیست هفتگی</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if workboard.supply_usages %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                مصرف‌های در انتظار بررسی
+            </span>
+            <span class="glass-panel-caption">مصرف مواد شوینده، لوازم و تجهیزات که هنوز توسط مسئول بخش بررسی نشده‌اند.</span>
+        </span>
+        <span class="soft-badge soft-warning">{{ workboard.supply_usages|length }} مورد</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>پرسنل</th>
+                        <th>بخش</th>
+                        <th>شیفت</th>
+                        <th>زمان ثبت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usage in workboard.supply_usages %}
+                        <tr>
+                            <td class="fw-bold">{{ usage.user.full_name if usage.user else "-" }}</td>
+                            <td>{{ usage.section.name if usage.section else "-" }}</td>
+                            <td>{{ usage.shift or "-" }}</td>
+                            <td>{{ usage.created_at|jalali }}</td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.supply_report' if current_user.role == 'observer' else 'main.supervisor') }}{% if current_user.role != 'observer' %}#supply-usages{% endif %}">
+                                    بررسی مصرف
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if workboard.messages %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-comments"></i>
+                پیام‌ها و پیگیری‌های باز
+            </span>
+            <span class="glass-panel-caption">پیام‌هایی که هنوز پاسخ نهایی یا وضعیت انجام‌شده ندارند.</span>
+        </span>
+        <span class="soft-badge soft-info">{{ workboard.messages|length }} مورد</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>موضوع</th>
+                        <th>{% if current_user.role in ("manager", "observer") %}گیرنده{% else %}فرستنده{% endif %}</th>
+                        <th>بخش</th>
+                        <th>اولویت</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in workboard.messages %}
+                        <tr class="{% if not message.is_seen %}message-unread{% endif %}">
+                            <td class="fw-bold">
+                                {{ message.subject }}
+                                {% if not message.is_seen and current_user.role not in ("manager", "observer") %}
+                                    <span class="soft-badge soft-danger me-1">جدید</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if current_user.role in ("manager", "observer") %}
+                                    {{ message.recipient.full_name if message.recipient else "-" }}
+                                {% else %}
+                                    {{ message.sender.full_name if message.sender else "-" }}
+                                {% endif %}
+                            </td>
+                            <td>{{ message.section.name if message.section else "عمومی" }}</td>
+                            <td>
+                                <span class="soft-badge message-priority-{{ message.priority }}">
+                                    {{ message_priority_label(message.priority) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                                    {{ message_status_label(message.status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.message_detail', message_id=message.id) }}">
+                                    مشاهده و پیگیری
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if workboard.handoffs %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-right-left"></i>
+                تحویل شیفت‌های نیازمند مشاهده
+            </span>
+            <span class="glass-panel-caption">یادداشت‌های ثبت‌شده توسط پرسنل را بررسی و مشاهده کنید.</span>
+        </span>
+        <span class="soft-badge soft-danger">{{ workboard.handoffs|length }} مورد</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead><tr><th>تاریخ و شیفت</th><th>بخش</th><th>پرسنل</th><th>یادداشت</th><th>عملیات</th></tr></thead>
+                <tbody>
+                    {% for handoff in workboard.handoffs %}
+                        <tr class="table-warning">
+                            <td>{{ handoff.handoff_date|jalali }}<small class="d-block text-muted">{{ handoff.shift }}</small></td>
+                            <td>{{ handoff.section.name }}</td>
+                            <td>{{ handoff.user.full_name }}</td>
+                            <td>{{ handoff.note }}</td>
+                            <td>
+                                {% if current_user.role in ("manager", "supervisor") %}
+                                <form method="post" action="{{ url_for('main.acknowledge_shift_handoff', handoff_id=handoff.id) }}">
+                                    <button class="btn btn-sm btn-outline-primary" type="submit"><i class="fa-solid fa-eye ms-1"></i>ثبت مشاهده</button>
+                                </form>
+                                {% else %}<span class="text-muted">فقط مشاهده</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+
+{% if current_user.role == "supervisor" and workboard.inventory_alerts %}
+<details class="glass-panel mb-4" open>
+    <summary>
+        <span>
+            <span class="glass-panel-title">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                هشدارهای کمبود
+            </span>
+            <span class="glass-panel-caption">این بخش فقط هشدار موجودی بخش‌های تحت نظارت شما را نمایش می‌دهد.</span>
+        </span>
+        <span class="soft-badge soft-danger">{{ workboard.inventory_alerts|length }} هشدار</span>
+    </summary>
+    <div class="glass-panel-body">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>بخش</th>
+                        <th>قلم</th>
+                        <th>نوع</th>
+                        <th>موجودی فعلی</th>
+                        <th>حد هشدار</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in workboard.inventory_alerts %}
+                        <tr class="{% if alert.severity == 'critical' %}table-danger{% else %}table-warning{% endif %}">
+                            <td>{{ alert.item.section.name }}</td>
+                            <td class="fw-bold">{{ alert.item.name }}</td>
+                            <td>
+                                {% if alert.item.category == "material" %}
+                                    مواد شوینده و مصرفی
+                                {% else %}
+                                    لوازم و تجهیزات
+                                {% endif %}
+                            </td>
+                            <td>{{ alert.item.current_quantity|round(2) }} {{ alert.item.unit }}</td>
+                            <td>{{ alert.item.minimum_quantity|round(2) }} {{ alert.item.unit }}</td>
+                            <td>
+                                {% if alert.severity == "critical" %}
+                                    <span class="soft-badge soft-danger">تمام شده</span>
+                                {% else %}
+                                    <span class="soft-badge soft-warning">رو به اتمام</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.inventory') }}">مشاهده موجودی</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+{% endblock %}

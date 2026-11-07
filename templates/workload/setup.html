@@ -1,0 +1,45 @@
+{% extends 'base.html' %}{% from 'workload/_fields.html' import field, error_box with context %}
+{% block title %}معیارهای بار کاری | پاکیار{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-4"><h2>{{ section.name }}؛ مشخصات و معیارها</h2><a class="btn btn-outline-primary" href="{{ url_for('workload.plan', section_id=section.id) }}">ارزیابی شیفت</a></div>
+{{ error_box(error) }}
+<details class="card page-card p-4 mb-3" {% if not spec %}open{% endif %}><summary class="fw-bold">مشخصات خدماتی بخش</summary>
+<form method="post" class="pt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="spec">
+<fieldset {% if not can_edit %}disabled{% endif %}><div class="row g-3">
+{% for key, label in units.items() %}{% if key != 'fixed' %}{{ field(key, label, spec[key] if spec else '', 'number', true, 'any' if key == 'area' else '1') }}{% endif %}{% endfor %}
+<div class="col-12"><label for="equipment" class="form-label">تجهیزات و شرایط مؤثر بر روش نظافت</label><textarea class="form-control" id="equipment" name="equipment" maxlength="1000">{{ request.form.get('equipment', spec.equipment if spec else '') }}</textarea></div>
+<div class="col-12"><h5 class="mt-3">شرایط جسمیِ کار و تناسب ابزار</h5><p class="small text-muted">مقادیر واقعی کار را اندازه‌گیری کنید. خالی و «نامشخص» با صفر و «خیر» متفاوت‌اند. برای چند نوع ابزار یا وظیفه متفاوت، شرح هر مورد را در تجهیزات بنویسید و ارزیابی تخصصی جدا انجام دهید.</p></div>
+{% set ergo = (spec.ergonomics or {}) if spec else {} %}
+{% for key, info in ergo_measurements.items() %}{{ field(key, info[0], ergo.get(key), 'number') }}{% endfor %}
+{% for key, label in ergo_conditions.items() %}<div class="col-md-6 col-xl-4"><label for="{{ key }}" class="form-label">{{ label }}</label><select name="{{ key }}" id="{{ key }}" class="form-select">{% for value, title in [('unknown', 'نامشخص'), ('yes', 'بله'), ('no', 'خیر')] %}<option value="{{ value }}" {% if request.form.get(key, ergo.get(key, 'unknown')) == value %}selected{% endif %}>{{ title }}</option>{% endfor %}</select></div>{% endfor %}
+</div>
+<p class="small text-muted mt-3">زمان‌سنجی باید با همین تجهیزات و روش کار انجام شده باشد. تخت‌های اشغال‌شده را پیش از ارزیابی روز به‌روز کنید.</p>
+{% if can_edit %}<button class="btn btn-primary">ذخیره مشخصات بخش</button>{% endif %}</fieldset></form></details>
+<section class="card page-card p-4 mb-3" id="ergonomics"><h5>پیشنهاد اصلاح شرایط کار و ابزار</h5>
+<p class="small text-muted">راهنمای اولیه بر اساس اطلاعات ثبت‌شده؛ تعیین سلامت، صلاحیت شغلی یا وزن ایمن عمومی انجام نمی‌شود. معیار، سازگارکردن کار با فرد است. بررسی تخصصی بهداشت حرفه‌ای و طب کار لازم است.</p>
+{% if can_edit %}<form method="get" class="d-flex flex-wrap gap-2 mb-3"><label for="person_id" class="visually-hidden">مقایسه با پرسنل بخش</label><select id="person_id" name="person_id" class="form-select w-auto"><option value="">شرایط عمومی بخش</option>{% for u in staff %}<option value="{{ u.id }}" {% if selected_person and u.id == selected_person.id %}selected{% endif %}>{{ u.full_name }}</option>{% endfor %}</select><button class="btn btn-outline-primary">بررسی تناسب شرایط ثبت‌شده</button></form>{% endif %}
+{% if selected_person %}<p>مقایسه با حدود مستند {{ selected_person.full_name }}؛ مقادیر نامشخص به معنی تأیید نیستند.</p>{% endif %}
+{% for item in guidance %}<div class="alert alert-{{ item.level }} mb-2"><strong>{{ item.title }}</strong><div>{{ item.message }}</div></div>{% endfor %}
+<small class="text-muted">مراجع راهنما: OSHA — Hospitals / Housekeeping / Work-related Musculoskeletal Disorders؛ NIOSH — Revised Lifting Equation. این راهنما ضریب قانونی وزارت بهداشت یا ارزیابی کامل تخصصی نیست.</small></section>
+{% if can_edit %}<details class="card page-card p-4 mb-3" {% if not tasks %}open{% endif %}><summary class="fw-bold">تعریف فعالیت و زمان موردنیاز</summary>
+<form method="post" class="pt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="task">
+<p class="small text-muted">برای نمونه «تعویض کیسه سطل» بر اساس تعداد سطل‌ها. زمان شامل آماده‌سازی، حفاظت فردی و مراحل ضروری روش نظافت باشد؛ زمان‌های مشترک را فقط یک بار محاسبه کنید.</p>
+<div class="row g-3">{{ field('title', 'نام فعالیت', '', 'text', true) }}
+<div class="col-md-6 col-xl-4"><label class="form-label" for="unit">مبنای تعداد</label><select class="form-select" id="unit" name="unit">{% for key, label in units.items() %}<option value="{{ key }}" {% if request.form.get('unit') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+{{ field('quantity', 'تعداد (فقط برای مبنای دستی)', 1, 'number', true) }}
+{{ field('repeats', 'دفعات تکرار در این شیفت', 1, 'number', true) }}
+{{ field('minutes', 'دقیقه برای هر واحد در هر نوبت', '', 'number', true) }}
+<div class="col-md-6 col-xl-4"><label class="form-label" for="shift">شیفت اجرا</label><select class="form-select" id="shift" name="shift"><option value="all">هر سه شیفت، هر بار مستقل</option>{% for s in shifts %}<option {% if request.form.get('shift') == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+<div class="col-md-6 col-xl-4"><label class="form-label" for="weekday">روز اجرا</label><select class="form-select" id="weekday" name="weekday"><option value="">هر روز</option>{% for key, label in weekdays %}<option value="{{ key }}" {% if request.form.get('weekday') == key|string %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+<div class="col-md-6 col-xl-4"><label class="form-label" for="basis">اعتبار زمان واردشده</label><select class="form-select" id="basis" name="basis">{% for key, label in basis_labels.items() %}<option value="{{ key }}" {% if request.form.get('basis') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+{{ field('reference', 'مرجع: نام سند، نسخه/بند یا شرح زمان‌سنجی', '', 'text', true) }}
+{{ field('approved_by', 'نام و سمت تأییدکننده محلی') }}{{ field('approved_date', 'تاریخ تأیید (شمسی)') }}
+<div class="col-12"><label class="form-check"><input type="checkbox" class="form-check-input" name="needs_review" value="1" {% if request.form.get('needs_review') %}checked{% endif %}> این فعالیت نیازمند بررسی تخصصی یا آموزش ویژه است (حمل بار، مواد شیمیایی، ایزوله و ...).</label></div>
+</div><button class="btn btn-primary mt-3">ثبت فعالیت</button></form></details>{% endif %}
+<div class="card page-card p-4"><h5>فعالیت‌های فعال</h5><p class="small text-muted">این فهرست برای برآورد زمان است؛ جایگزین چک‌لیست اجرایی نیست. برای اصلاح فعالیت، آن را غیرفعال و نسخه تازه ثبت کنید.</p>
+<a class="btn btn-outline-primary mb-3 align-self-start" href="{{ url_for('wellbeing.index') }}">ارزیابی تخصصی هر فعالیت و ابزار</a>
+<div class="table-responsive"><table class="table"><thead><tr><th>کار</th><th>مبنا</th><th>زمان و تکرار</th><th>زمان‌بندی</th><th>مرجع</th>{% if can_edit %}<th>عملیات</th>{% endif %}</tr></thead><tbody>
+{% for t in tasks %}<tr><td>{{ t.title }}{% if t.needs_review %}<small class="d-block text-warning">نیازمند بررسی تخصصی</small>{% endif %}</td><td>{{ units[t.unit] }}{% if t.unit == 'fixed' %} × {{ t.quantity }}{% endif %}</td><td>{{ t.minutes }} دقیقه × {{ t.repeats }}</td><td>{{ 'هر شیفت' if t.shift == 'all' else t.shift }} / {{ dict(weekdays).get(t.weekday, 'هر روز') }}</td><td>{{ basis_labels[t.basis] }}<small class="d-block">{{ t.reference }}</small>{% if t.approved_by %}<small>{{ t.approved_by }} — {{ date_label(t.approved_date) if t.approved_date else '' }}</small>{% endif %}</td>
+{% if can_edit %}<td><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="deactivate"><input type="hidden" name="task_id" value="{{ t.id }}"><button class="btn btn-sm btn-outline-secondary">غیرفعال</button></form></td>{% endif %}</tr>
+{% else %}<tr><td colspan="6">هنوز فعالیت زمان‌داری تعریف نشده است.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

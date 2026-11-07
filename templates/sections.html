@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت بخش‌ها | پاکیار{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">بخش‌های سامانه</h2>
+        <p class="text-muted mb-0">بخش‌ها و افراد اختصاص‌داده‌شده به آن‌ها</p>
+    </div>
+    {% if current_user.role == "manager" %}
+        <a class="btn btn-primary" href="{{ url_for('main.add_section') }}">
+            <i class="fa-solid fa-plus ms-1"></i> افزودن بخش
+        </a>
+    {% endif %}
+</div>
+
+<div class="card page-card p-4">
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>شناسه</th>
+                    <th>نام بخش</th>
+                    <th>طبقه</th>
+                    <th>توضیحات</th>
+                    <th>افراد اختصاص‌یافته</th>
+                    {% if current_user.role == "manager" %}<th>عملیات</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for section in sections %}
+                    <tr>
+                        <td>{{ section.id }}</td>
+                        <td>{{ section.name }}<a class="btn btn-sm btn-outline-primary d-block mt-2" href="{{ url_for('workload.setup', section_id=section.id) }}">مشخصات دقیق و شرایط کار</a><small class="text-muted d-block mt-1">{% if section.work_spec %}{{ section.work_spec.area }} مترمربع · {{ section.work_spec.beds }} تخت · {{ section.work_spec.bins }} سطل{% else %}مشخصات خدماتی تکمیل نشده{% endif %}</small></td>
+                        <td>{{ section.floor or "-" }}</td>
+                        <td>{{ section.description or "-" }}</td>
+                        <td>
+                            {% for user in section.assigned_users %}
+                                <span class="badge text-bg-light">{{ user.full_name }}</span>
+                            {% else %}-{% endfor %}
+                        </td>
+                        {% if current_user.role == "manager" %}
+                            <td>
+                                <form method="post" action="{{ url_for('main.delete_section', section_id=section.id) }}" onsubmit="return confirm('این بخش حذف شود؟');">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                </form>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">بخشی ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

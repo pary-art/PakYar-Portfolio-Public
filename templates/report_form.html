@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت گزارش جدید | پاکیار{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">ثبت گزارش جدید</h2>
+                    <p class="text-muted mb-0">اطلاعات فعالیت انجام‌شده را وارد کنید.</p>
+                </div>
+                <i class="fa-solid fa-file-circle-plus text-primary fs-2"></i>
+            </div>
+
+            <form method="post" action="{{ url_for('main.add_report') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="section_id">بخش</label>
+                        <select class="form-select" id="section_id" name="section_id" required>
+                            <option value="">انتخاب بخش</option>
+                            {% for section in sections %}
+                                <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not sections %}
+                            <div class="form-text text-danger">برای شما بخشی اختصاص داده نشده است.</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift">
+                            <option value="">انتخاب شیفت</option>
+                            <option value="صبح">صبح</option>
+                            <option value="عصر">عصر</option>
+                            <option value="شب">شب</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="description">شرح فعالیت</label>
+                        <textarea class="form-control" id="description" name="description" rows="7" required></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="image">تصویر پیوست، در صورت نیاز</label>
+                        <input class="form-control" id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.gif,.webp">
+                        <div class="form-text">فرمت‌های مجاز: PNG، JPG، JPEG، GIF و WEBP؛ حداکثر ۵ مگابایت.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit" {% if not sections %}disabled{% endif %}>
+                        <i class="fa-solid fa-paper-plane ms-1"></i>
+                        ثبت گزارش
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">انصراف</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

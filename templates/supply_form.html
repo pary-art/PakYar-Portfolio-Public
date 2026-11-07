@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت مصرف شیفت | پاکیار{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card page-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">ثبت مواد و تجهیزات مصرف‌شده</h2>
+                    <p class="text-muted mb-0">این اطلاعات برای مسئول بخش ارسال می‌شود.</p>
+                </div>
+                <i class="fa-solid fa-boxes-stacked text-primary fs-2"></i>
+            </div>
+
+            <form method="post" action="{{ url_for('main.add_supply_usage') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="section_id">بخش</label>
+                        <select class="form-select" id="section_id" name="section_id" required>
+                            <option value="">انتخاب بخش</option>
+                            {% for section in sections %}
+                                <option value="{{ section.id }}">{{ section.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift" required>
+                            <option value="">انتخاب شیفت</option>
+                            <option value="صبح">صبح</option>
+                            <option value="عصر">عصر</option>
+                            <option value="شب">شب</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="materials">مواد شوینده و مصرفی</label>
+                        <textarea
+                            class="form-control"
+                            id="materials"
+                            name="materials"
+                            rows="6"
+                            placeholder="هر مورد را در یک خط بنویسید؛ مثال:&#10;مایع شوینده — ۲ لیتر&#10;ضدعفونی‌کننده — ۱ بطری"
+                        ></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="equipment">لوازم و تجهیزات مصرف‌شده</label>
+                        <textarea
+                            class="form-control"
+                            id="equipment"
+                            name="equipment"
+                            rows="6"
+                            placeholder="هر مورد را در یک خط بنویسید؛ مثال:&#10;دستمال — ۵ عدد&#10;کیسه زباله — ۱۰ عدد"
+                        ></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="notes">توضیحات تکمیلی</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="در صورت نیاز، توضیح بیشتری بنویسید."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="estimated_cost">هزینهٔ تقریبی این شیفت (تومان)</label>
+                        <input
+                            class="form-control"
+                            id="estimated_cost"
+                            name="estimated_cost"
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value="0"
+                            inputmode="decimal"
+                        >
+                        <div class="form-text">برای گزارش هزینه وارد کنید؛ اگر هزینه‌ای ندارید صفر بگذارید.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-paper-plane ms-1"></i>
+                        ارسال برای مسئول بخش
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.staff') }}">انصراف</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}در انتظار انتصاب | پاکیار{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card page-card p-5 text-center">
+            <div class="display-5 text-primary mb-3"><i class="fa-solid fa-user-clock"></i></div>
+            <h2 class="fw-bold mb-3">حساب مسئول خدمات هنوز منصوب نشده است</h2>
+            <p class="text-muted mb-4">
+                ناظر اداره‌کل باید این حساب را به‌عنوان مسئول خدمات انتخاب کند. تا آن زمان، امکانات مدیریتی سامانه در دسترس نیست؛ اطلاعات حساب و رمز عبور شما حفظ شده است.
+            </p>
+            <div class="d-flex justify-content-center flex-wrap gap-2">
+                <a class="btn btn-outline-primary" href="{{ url_for('main.preferences') }}">
+                    <i class="fa-solid fa-gear ms-1"></i>تنظیمات حساب
+                </a>
+                <a class="btn btn-outline-danger" href="{{ url_for('main.logout') }}">
+                    <i class="fa-solid fa-arrow-right-from-bracket ms-1"></i>خروج
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش مورد چک‌لیست | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <h2 class="fw-bold mb-2">ویرایش مورد چک‌لیست</h2>
+    <p class="mb-0 opacity-75">نوع کار، روز هفته، شیفت و ترتیب نمایش را اصلاح کنید.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-7">
+        <div class="card page-card p-4">
+            <form method="post" action="{{ url_for('main.edit_checklist_item', item_id=item.id) }}">
+                <div class="mb-3">
+                    <label class="form-label" for="title">عنوان کار</label>
+                    <input class="form-control" id="title" name="title" maxlength="180" value="{{ item.title }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="description">توضیح</label>
+                    <textarea class="form-control" id="description" name="description" rows="4">{{ item.description or "" }}</textarea>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="frequency">نوع چک‌لیست</label>
+                        <select class="form-select" id="frequency" name="frequency">
+                            {% for frequency in checklist_frequencies %}
+                                <option value="{{ frequency }}" {% if item.frequency == frequency %}selected{% endif %}>
+                                    {{ checklist_frequency_labels[frequency] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6" id="checklist-shift-field">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift">
+                            {% for shift in checklist_shifts %}
+                                <option value="{{ shift }}" {% if item.shift == shift %}selected{% endif %}>{{ shift }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6" id="weekly-day-field">
+                        <label class="form-label" for="weekday">روز انجام در هفته</label>
+                        <select class="form-select" id="weekday" name="weekday">
+                            {% for weekday_code, weekday_label in checklist_weekdays %}
+                                <option value="{{ weekday_code }}" {% if item.weekday == weekday_code %}selected{% endif %}>
+                                    {{ weekday_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="sort_order">ترتیب نمایش</label>
+                        <input class="form-control" id="sort_order" name="sort_order" type="number" min="0" value="{{ item.sort_order }}">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-floppy-disk ms-1"></i>
+                        ذخیره تغییرات
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.checklists', section_id=item.section_id, frequency=item.frequency, shift=item.shift, weekday=item.weekday if item.frequency == 'weekly' else None) }}">
+                        انصراف
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (() => {
+        const frequency = document.getElementById("frequency");
+        const weeklyDayField = document.getElementById("weekly-day-field");
+        const shift = document.getElementById("shift");
+
+        if (!frequency || !weeklyDayField || !shift) {
+            return;
+        }
+
+        const syncFrequency = () => {
+            const isWeekly = frequency.value === "weekly";
+            weeklyDayField.classList.toggle("d-none", !isWeekly);
+            shift.disabled = false;
+        };
+
+        frequency.addEventListener("change", syncFrequency);
+        syncFrequency();
+    })();
+</script>
+{% endblock %}

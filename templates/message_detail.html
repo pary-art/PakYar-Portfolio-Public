@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}جزئیات پیام پیگیری | پاکیار{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">{{ message.subject }}</h2>
+            <p class="mb-0 opacity-75">جزئیات اطلاع مشکل و نتیجه پیگیری</p>
+        </div>
+        <a class="btn btn-light" href="{{ url_for('main.messages') }}">
+            <i class="fa-solid fa-arrow-right ms-1"></i>
+            بازگشت به کارتابل
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card page-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="fa-solid fa-triangle-exclamation ms-2 text-danger"></i>
+                    شرح مشکل
+                </h5>
+                <div class="d-flex gap-2">
+                    <span class="soft-badge message-priority-{{ message.priority }}">
+                        اولویت: {{ message_priority_label(message.priority) }}
+                    </span>
+                    <span class="soft-badge message-status-{{ message.status|replace('_', '-') }}">
+                        {{ message_status_label(message.status) }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="row g-3 small text-muted mb-4">
+                <div class="col-sm-6">
+                    <i class="fa-solid fa-user ms-1"></i>
+                    فرستنده: <strong class="text-dark">{{ message.sender.full_name if message.sender else "-" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <i class="fa-solid fa-user-check ms-1"></i>
+                    گیرنده: <strong class="text-dark">{{ message.recipient.full_name if message.recipient else "-" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <i class="fa-solid fa-hospital ms-1"></i>
+                    بخش: <strong class="text-dark">{{ message.section.name if message.section else "عمومی" }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <i class="fa-regular fa-clock ms-1"></i>
+                    زمان ارسال: <strong class="text-dark">{{ message.created_at|jalali }}</strong>
+                </div>
+            </div>
+
+            <div class="message-description border rounded-4 p-3 bg-light">
+                {{ message.description }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card page-card p-4 h-100">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-reply ms-2 text-primary"></i>
+                پاسخ و نتیجه پیگیری
+            </h5>
+
+            {% if message.response %}
+                <div class="message-description border rounded-4 p-3 mb-3" style="background: #f0fdf4;">
+                    {{ message.response }}
+                </div>
+                <div class="small text-muted mb-4">
+                    {% if message.responded_at %}
+                        آخرین پاسخ: {{ message.responded_at|jalali }}
+                    {% endif %}
+                </div>
+            {% elif current_user.role in ("manager", "observer") %}
+                <div class="alert alert-warning rounded-4 border-0">
+                    هنوز پاسخی از گیرنده ثبت نشده است.
+                </div>
+            {% endif %}
+
+            {% if current_user.role in ["supervisor", "staff"] and message.recipient_id == current_user.id %}
+                <form method="post" action="{{ url_for('main.respond_message', message_id=message.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label" for="response">پاسخ شما</label>
+                        <textarea class="form-control" id="response" name="response" rows="5" required
+                                  placeholder="اقدام انجام‌شده یا توضیح لازم را بنویسید.">{{ message.response or "" }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="status">وضعیت پیگیری</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="in_progress" {% if message.status == "in_progress" %}selected{% endif %}>در حال پیگیری</option>
+                            <option value="resolved" {% if message.status == "resolved" %}selected{% endif %}>انجام شد</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">
+                        <i class="fa-solid fa-check ms-1"></i>
+                        ثبت پاسخ برای مسئول خدمات
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

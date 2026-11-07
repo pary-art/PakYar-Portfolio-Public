@@ -1,0 +1,9 @@
+{% extends 'wellbeing/layout.html' %}
+{% block wellbeing_content %}
+<div class="card page-card p-4"><h5>ارزیابی مستقل هر فعالیت</h5>
+<p class="text-muted small">وضعیت «بررسی‌شده» فقط ثبت نظر کارشناس است؛ تأیید پزشکی یا تضمین بی‌خطر بودن نیست. تغییر روش کار به ارزیابی جدید نیاز دارد.</p>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>بخش</th><th>وظیفه</th><th>وضعیت</th><th>بازبینی</th><th></th></tr></thead><tbody>
+{% for task in tasks %}{% set a = assessments[task.id] %}<tr><td>{{ task.section.name }}</td><td>{{ task.title }}</td><td>{{ status_labels[a.status] if a else 'اطلاعات ناکافی؛ ارزیابی نشده' }}{% if a and a.review_due < today %}<span class="badge bg-warning text-dark d-block">موعد بازبینی گذشته</span>{% endif %}</td><td>{{ date_label(a.review_due) if a else '—' }}</td><td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('wellbeing.task', tid=task.id) }}">جزئیات و سابقه</a></td></tr>{% else %}<tr><td colspan="5">فعالیتی در بخش‌های مجاز شما تعریف نشده است. مسئول خدمات می‌تواند در «تقسیم بار کاری ← مشخصات و معیارها» فعالیت‌ها را تعریف کند.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% if current_user.role == 'manager' %}<div class="alert alert-info mt-3">برای فعال‌شدن بررسی تخصصی، در مدیریت کاربران نقش «کارشناس بهداشت حرفه‌ای» را ایجاد و بخش‌های مجاز را مشخص کنید. صرف انتخاب نقش، صلاحیت حرفه‌ای فرد را احراز نمی‌کند.</div>{% endif %}
+{% endblock %}

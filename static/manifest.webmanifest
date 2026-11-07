@@ -1,0 +1,28 @@
+{
+  "name": "سامانه پاکیار",
+  "short_name": "پاکیار",
+  "description": "سامانه مدیریت نظافت، گزارش‌ها، چک‌لیست و مصرف بیمارستان",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#f5fafc",
+  "theme_color": "#123b52",
+  "icons": [
+    {
+      "src": "/static/pakyar-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/pakyar-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

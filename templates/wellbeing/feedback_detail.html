@@ -1,0 +1,5 @@
+{% extends 'wellbeing/layout.html' %}
+{% block wellbeing_content %}<h4>پیگیری خصوصی گزارش {{ row.id }}</h4><article class="card page-card p-4 mb-3"><small>{{ row.created_at|jalali }}</small><p style="white-space:pre-wrap">{{ row.body }}</p></article>
+{% for reply in replies %}<article class="card page-card p-3 mb-2"><strong>{{ reply.author_name }}</strong><small>{{ reply.created_at|jalali }}</small><p style="white-space:pre-wrap">{{ reply.body }}</p></article>{% endfor %}
+<form method="post" class="card page-card p-4 mt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="body" class="form-label">پاسخ یا توضیح تکمیلی</label><textarea id="body" name="body" class="form-control mb-3" maxlength="4000" rows="3" required></textarea>
+{% if current_user.role == 'oh_expert' %}<label for="status" class="form-label">وضعیت پیگیری</label><select id="status" name="status" class="form-select mb-3"><option value="following">در حال پیگیری</option><option value="closed">پاسخ داده شد و بسته شود</option></select>{% endif %}<button class="btn btn-primary align-self-start">ثبت پاسخ خصوصی</button></form>{% endblock %}

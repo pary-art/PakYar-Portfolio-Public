@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% from 'workload/_fields.html' import error_box, filter with context %}
+{% block title %}تقسیم بار کاری | پاکیار{% endblock %}
+{% block content %}
+<div class="mb-4"><h2 class="fw-bold">تقسیم بار کاری</h2><p class="text-muted">حجم وظایف، زمان مفید شیفت و سهم هر نفر؛ قابل بررسی و مستند</p></div>
+{{ error_box(error) }}{{ filter(day, shift, shifts, date_label) }}
+<div class="row g-3 mb-4">
+{% for item in summaries %}
+<div class="col-md-6 col-xl-4"><div class="card page-card h-100 p-4">
+    <h5>{{ item.section.name }}</h5>
+    {% if item.plan %}<p class="mb-1">زمان موردنیاز: <strong>{{ item.plan.total_minutes|round(1) }}</strong> دقیقه</p>
+    <p class="{% if item.plan.total_minutes - item.assigned > 0.01 %}text-danger{% else %}text-muted{% endif %}">کار تقسیم‌نشده: {{ (item.plan.total_minutes - item.assigned)|round(1) }} دقیقه</p>
+    <small>{{ basis_labels[item.plan.snapshot.basis] }}</small>
+    {% else %}<p class="text-muted">هنوز برای این شیفت ارزیابی ذخیره نشده است.</p>{% endif %}
+    <div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-primary btn-sm" href="{{ url_for('workload.plan', section_id=item.section.id, date=date_label(day), shift=shift) }}">ارزیابی و تقسیم کار</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('workload.setup', section_id=item.section.id) }}">مشخصات و معیارها</a></div>
+</div></div>
+{% else %}<p class="text-muted">ابتدا بخش و پرسنل را در مدیریت سامانه تعریف کنید.</p>{% endfor %}
+</div>
+<div class="card page-card p-4 mb-4"><h5>بار کاری افراد در {{ date_label(day) }} — {{ shift }}</h5>
+{% if current_user.role == 'supervisor' %}<p class="text-muted">فقط سهم بخش‌های تحت مسئولیت شما نمایش داده می‌شود؛ این عدد مجموع کل کار فرد نیست.</p>{% endif %}
+<p class="small text-muted">درصد = دقایق کار واگذارشده ÷ زمان مفید شیفت × ۱۰۰. بیشتر از ۱۰۰٪ یعنی زمان تخصیص‌یافته کافی نیست؛ درصد، احتمال آسیب یا حکم پزشکی نیست.</p>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>پرسنل</th><th>بخش‌ها</th><th>کار (دقیقه)</th><th>زمان مفید</th><th>بار کاری</th></tr></thead><tbody>
+{% for p in people %}<tr><td>{{ p.name }}</td><td>{{ p.sections|join('، ') }}</td><td>{{ p.minutes|round(1) }}</td><td>{{ p.available|round(1) }}</td><td>
+{% if p.percent is not none %}<span class="badge {{ 'bg-danger' if p.percent > 100 else 'bg-primary' }}">{{ p.percent }}٪</span>
+<div class="progress mt-2" style="height:6px" aria-label="بار کاری {{ p.percent }} درصد"><div class="progress-bar {{ 'bg-danger' if p.percent > 100 else '' }}" style="width:{{ [p.percent, 100]|min }}%"></div></div>
+{% else %}زمان مفید نامشخص{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="text-muted">هنوز سهمی ذخیره نشده است.</td></tr>{% endfor %}
+</tbody></table></div></div>
+<details class="card page-card p-4"><summary class="fw-bold">مبنای محاسبه و روش استفاده</summary>
+<div class="pt-3"><ol><li>مشخصات بخش را تکمیل کنید؛ صفر یعنی واقعاً وجود ندارد، نه اطلاعات نامشخص.</li>
+<li>فعالیت‌ها، تعداد تکرار، زمان هر واحد و مرجع اندازه‌گیری را تعریف کنید. زمان پیش‌فرض مصوبی در برنامه قرار داده نشده است.</li>
+<li>در ارزیابی شیفت، افراد حاضر، استراحت و سایر وظایف را وارد کنید و پیشنهاد زمانی را ببینید.</li>
+<li>بعد از بررسی آموزش و محدودیت‌های کاری، سهم هر نفر را ثبت کنید. پیشنهاد سامانه به‌تنهایی مجوز واگذاری کار نیست.</li></ol>
+<p>این ابزار برآورد زمانی محلی است؛ اجرای کامل WISN، تعیین قانونی سختی کار، ارزیابی پزشکی یا گواهی انطباق با وزارت بهداشت نیست. مقررات و زمان‌های مورد تأیید محل باید با نام سند، تاریخ و تأییدکننده ثبت شوند.</p>
+<p class="small">مراجع روش‌شناسی: WHO، راهنمای WISN ویرایش دوم ۲۰۲۳؛ CDC، Cleaning Programs بخش ۲.۲.۱؛ NIOSH، Revised Lifting Equation برای ارزیابی تخصصی حمل بار. این مراجع ضرایب ثابت دقیقه‌ای این سامانه را تعیین نکرده‌اند.</p>
+</div></details>
+{% endblock %}

@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+
+{% block title %}چک‌لیست نظافت | پاکیار{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checklist-sidebar {
+        position: sticky;
+        top: 92px;
+    }
+
+    .checklist-menu-link {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .85rem 1rem;
+        margin-bottom: .55rem;
+        border: 1px solid transparent;
+        border-radius: 14px;
+        color: #355567;
+        text-decoration: none;
+        transition: all .2s ease;
+    }
+
+    .checklist-menu-link:hover {
+        color: var(--primary-color);
+        background: #eef8f7;
+        border-color: #cbe9e5;
+    }
+
+    .checklist-menu-link.active {
+        color: #fff;
+        background: linear-gradient(135deg, var(--brand-ink), var(--primary-color));
+        box-shadow: 0 10px 20px rgba(15, 118, 110, .18);
+    }
+
+    .checklist-menu-link i {
+        width: 1.3rem;
+        text-align: center;
+    }
+
+    .checklist-item-card {
+        border: 1px solid #dbe9ed;
+        border-radius: 16px;
+        background: #fff;
+        transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .checklist-item-card:hover {
+        transform: translateY(-1px);
+        border-color: #9bd8d1;
+    }
+
+    .checklist-item-card:has(input:checked) {
+        border-color: #14b8a6;
+        background: #f0fdfa;
+    }
+
+    .checklist-check {
+        width: 1.35rem;
+        height: 1.35rem;
+        margin-top: .2rem;
+        accent-color: #0f766e;
+    }
+
+    .progress {
+        height: .7rem;
+        border-radius: 999px;
+        background: #e6eef1;
+    }
+
+    .progress-bar {
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0f766e, #14b8a6);
+    }
+
+    .checklist-name {
+        white-space: pre-wrap;
+        line-height: 1.8;
+    }
+
+    @media (max-width: 991.98px) {
+        .checklist-sidebar {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-box mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">مدیریت چک‌لیست نظافت</h2>
+            <p class="mb-0 opacity-75">
+                {{ selected_frequency_label }} · {{ checklist_period_label }}
+            </p>
+        </div>
+        <div class="text-end">
+            <div class="small opacity-75">تاریخ کاری امروز</div>
+            <div class="fw-bold fs-5">{{ checklist_date_label }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 align-items-start">
+    <aside class="col-lg-3">
+        <div class="card page-card p-3 checklist-sidebar">
+            <div class="px-2 pb-2">
+                <small class="text-muted">دسته‌بندی چک‌لیست‌ها</small>
+                <h6 class="fw-bold mt-1 mb-0">انتخاب نوع کار</h6>
+            </div>
+
+            <a
+                class="checklist-menu-link {% if selected_frequency == 'daily' %}active{% endif %}"
+                href="{{ url_for('main.checklists', frequency='daily', section_id=selected_section.id if selected_section else None, shift='صبح') }}"
+            >
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>
+                    <strong class="d-block">روتین روزانه</strong>
+                    <small class="{% if selected_frequency == 'daily' %}text-white-50{% else %}text-muted{% endif %}">هر شیفت یک‌بار</small>
+                </span>
+            </a>
+
+            <a
+                class="checklist-menu-link {% if selected_frequency == 'weekly' %}active{% endif %}"
+                href="{{ url_for('main.checklists', frequency='weekly', section_id=selected_section.id if selected_section else None, weekday=selected_weekday or today_weekday, shift=selected_shift) }}"
+            >
+                <i class="fa-solid fa-calendar-week"></i>
+                <span>
+                    <strong class="d-block">نظافت هفتگی</strong>
+                    <small class="{% if selected_frequency == 'weekly' %}text-white-50{% else %}text-muted{% endif %}">یک‌بار در هفته</small>
+                </span>
+            </a>
+
+            <hr>
+
+            <a class="checklist-menu-link" href="{{ url_for('main.index') }}">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>بازگشت به داشبورد</span>
+            </a>
+        </div>
+    </aside>
+
+    <section class="col-lg-9">
+        <div class="card page-card p-4 mb-4">
+            <form method="get" action="{{ url_for('main.checklists') }}" class="row g-3 align-items-end">
+                <input type="hidden" name="frequency" value="{{ selected_frequency }}">
+                <div class="col-md-6">
+                    <label class="form-label" for="section_id">بخش</label>
+                    <select class="form-select" id="section_id" name="section_id" {% if not sections %}disabled{% endif %}>
+                        {% for section in sections %}
+                            <option value="{{ section.id }}" {% if selected_section and selected_section.id == section.id %}selected{% endif %}>
+                                {{ section.name }}
+                            </option>
+                        {% else %}
+                            <option value="">هنوز بخشی اختصاص داده نشده است</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if selected_frequency == "daily" %}
+                    <div class="col-md-4">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift">
+                            {% for shift in checklist_shifts %}
+                                <option value="{{ shift }}" {% if selected_shift == shift %}selected{% endif %}>{{ shift }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% else %}
+                    <div class="col-md-3">
+                        <label class="form-label" for="weekday">روز هفته</label>
+                        <select class="form-select" id="weekday" name="weekday">
+                            {% for weekday_code, weekday_label in checklist_weekdays %}
+                                <option value="{{ weekday_code }}" {% if selected_weekday == weekday_code %}selected{% endif %}>
+                                    {{ weekday_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="shift">شیفت</label>
+                        <select class="form-select" id="shift" name="shift">
+                            {% for shift in checklist_shifts %}
+                                <option value="{{ shift }}" {% if selected_shift == shift %}selected{% endif %}>{{ shift }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit" {% if not sections %}disabled{% endif %}>
+                        <i class="fa-solid fa-filter ms-1"></i>
+                        نمایش
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% if not selected_section %}
+            <div class="alert alert-warning rounded-4 border-0 shadow-sm">
+                برای نمایش چک‌لیست، ابتدا یک بخش برای کاربر تعریف کنید.
+            </div>
+        {% elif current_user.role == "staff" %}
+            <details class="glass-panel mb-4">
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-list-check"></i>{{ selected_frequency_label }} {{ selected_section.name }}</span>
+                        <span class="glass-panel-caption">
+                            {% if selected_frequency == "daily" %}
+                                شیفت {{ selected_shift }}
+                            {% else %}
+                                {{ selected_weekday_label }} · شیفت {{ selected_shift }}
+                            {% endif %}
+                        </span>
+                    </span>
+                </summary>
+                <div class="card page-card p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                    <div>
+                        <h4 class="fw-bold mb-1">
+                            {{ selected_frequency_label }} {{ selected_section.name }}
+                        </h4>
+                        <p class="text-muted mb-0">
+                            {% if selected_frequency == "daily" %}
+                                شیفت {{ selected_shift }} · هر مورد در این شیفت یک‌بار انجام می‌شود.
+                            {% else %}
+                                {{ selected_weekday_label }} · شیفت {{ selected_shift }} · هر مورد در هفتهٔ جاری فقط یک‌بار انجام می‌شود.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-primary">{{ checklist_stats.completed_checks }} از {{ checklist_stats.total_checks }}</div>
+                        <small class="text-muted">انجام شده · {{ checklist_stats.rate }}٪</small>
+                    </div>
+                </div>
+
+                <div class="progress mb-4" role="progressbar" aria-label="درصد انجام چک‌لیست">
+                    <div class="progress-bar" style="width: {{ checklist_stats.rate }}%;"></div>
+                </div>
+
+                {% if items %}
+                    <form method="post" action="{{ url_for('main.save_checklist') }}">
+                        <input type="hidden" name="section_id" value="{{ selected_section.id }}">
+                        <input type="hidden" name="frequency" value="{{ selected_frequency }}">
+                        <input type="hidden" name="shift" value="{{ selected_shift }}">
+                        <input type="hidden" name="weekday" value="{{ selected_weekday or '' }}">
+
+                        <div class="d-grid gap-3">
+                            {% for item in items %}
+                                {% set completion = completion_map.get(item.id) %}
+                                <label class="checklist-item-card d-flex gap-3 align-items-start p-3" for="checklist-item-{{ item.id }}">
+                                    <input
+                                        class="form-check-input checklist-check flex-shrink-0"
+                                        id="checklist-item-{{ item.id }}"
+                                        type="checkbox"
+                                        name="completed_item_ids"
+                                        value="{{ item.id }}"
+                                        {% if completion and completion.is_completed %}checked{% endif %}
+                                    >
+                                    <span class="flex-grow-1">
+                                        <span class="checklist-name d-block fw-bold">{{ loop.index }}. {{ item.title }}</span>
+                                        {% if item.description %}
+                                            <small class="checklist-name d-block text-muted mt-1">{{ item.description }}</small>
+                                        {% endif %}
+                                    </span>
+                                    {% if completion and completion.status == "needs_correction" %}
+                                        <span class="soft-badge soft-danger">نیازمند اصلاح</span>
+                                    {% elif completion and completion.status == "approved" %}
+                                        <span class="soft-badge soft-purple">تأیید شده</span>
+                                    {% elif completion and completion.is_completed %}
+                                        <span class="soft-badge soft-info">ثبت شده؛ در انتظار بررسی</span>
+                                    {% else %}
+                                        <span class="soft-badge soft-warning">باقی‌مانده</span>
+                                    {% endif %}
+                                </label>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-lg-7">
+                                <label class="form-label" for="checklist_note">یادداشت یا توضیح ثبت</label>
+                                {% set note_value = namespace(value="") %}
+                                {% for completion in completion_map.values() %}
+                                    {% if not note_value.value and completion.note %}
+                                        {% set note_value.value = completion.note %}
+                                    {% endif %}
+                                {% endfor %}
+                                <textarea
+                                    class="form-control"
+                                    id="checklist_note"
+                                    name="checklist_note"
+                                    rows="3"
+                                    placeholder="اگر موردی نیاز به توضیح دارد، اینجا بنویسید."
+                                >{{ note_value.value }}</textarea>
+                            </div>
+                            <div class="col-lg-5">
+                                <label class="form-label" for="evidence_image">تصویر مدرک انجام کار، در صورت نیاز</label>
+                                <input
+                                    class="form-control"
+                                    id="evidence_image"
+                                    name="evidence_image"
+                                    type="file"
+                                    accept=".png,.jpg,.jpeg,.gif,.webp"
+                                >
+                                <div class="form-text">حداکثر ۵ مگابایت؛ برای همه موارد علامت‌خورده ثبت می‌شود.</div>
+                            </div>
+                        </div>
+
+                        {% for completion in completion_map.values() %}
+                            {% if completion.status == "needs_correction" and completion.review_note %}
+                                <div class="alert alert-danger rounded-4 border-0 mt-3 mb-0">
+                                    <strong><i class="fa-solid fa-triangle-exclamation ms-1"></i>توضیح مسئول بخش:</strong>
+                                    {{ completion.review_note }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <button class="btn btn-primary mt-4" type="submit">
+                            <i class="fa-solid fa-floppy-disk ms-1"></i>
+                            ثبت وضعیت {{ selected_frequency_label }}
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fa-solid fa-list-check fs-2 d-block mb-2"></i>
+                        هنوز موردی برای این بخش و این نوع چک‌لیست تعریف نشده است.
+                    </div>
+                {% endif %}
+                </div>
+            </details>
+
+            <details class="glass-panel mt-4">
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-right-left"></i>تحویل شیفت</span>
+                        <span class="glass-panel-caption">یادداشت مهم شیفت را برای مسئول بخش ارسال کنید</span>
+                    </span>
+                </summary>
+                <div class="card page-card p-4">
+                    <form method="post" action="{{ url_for('main.save_shift_handoff') }}">
+                        <input type="hidden" name="section_id" value="{{ selected_section.id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label" for="handoff_shift">شیفت</label>
+                                <select class="form-select" id="handoff_shift" name="shift" required>
+                                    {% for shift in checklist_shifts %}
+                                        <option value="{{ shift }}" {% if selected_shift == shift %}selected{% endif %}>{{ shift }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label" for="handoff_note">یادداشت تحویل شیفت</label>
+                                <textarea class="form-control" id="handoff_note" name="note" rows="2" required placeholder="مثلاً یک مورد نیازمند پیگیری در شیفت بعد..."></textarea>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" type="submit">
+                                    <i class="fa-solid fa-paper-plane ms-1"></i>ارسال
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    {% if handoffs %}
+                        <div class="table-responsive mt-4">
+                            <table class="table table-modern align-middle mb-0">
+                                <thead><tr><th>شیفت</th><th>یادداشت</th><th>وضعیت</th></tr></thead>
+                                <tbody>
+                                    {% for handoff in handoffs %}
+                                        <tr>
+                                            <td>{{ handoff.shift }}<small class="d-block text-muted">{{ handoff.handoff_date|jalali }}</small></td>
+                                            <td>{{ handoff.note }}</td>
+                                            <td>
+                                                {% if handoff.is_acknowledged %}
+                                                    <span class="soft-badge soft-success">دیده شد</span>
+                                                {% else %}
+                                                    <span class="soft-badge soft-warning">در انتظار مشاهده</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </details>
+        {% else %}
+            {% if current_user.role == "supervisor" %}
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-5">
+                        <details class="glass-panel h-100">
+                            <summary>
+                                <span>
+                                    <span class="glass-panel-title"><i class="fa-solid fa-plus-circle"></i>تعریف موارد جدید</span>
+                                    <span class="glass-panel-caption">ساخت روتین روزانه یا برنامهٔ هفتگی برای این بخش</span>
+                                </span>
+                            </summary>
+                            <div class="card page-card p-4 h-100">
+                            <h5 class="fw-bold mb-1">
+                                <i class="fa-solid fa-plus-circle ms-2 text-primary"></i>
+                                تعریف موارد جدید
+                            </h5>
+                            <p class="text-muted small mb-3">
+                                هر خط یک کار است؛ با Enter فقط به خط بعد بروید.
+                            </p>
+
+                            <form method="post" action="{{ url_for('main.add_checklist_item') }}">
+                                <input type="hidden" name="section_id" value="{{ selected_section.id }}">
+                                <div class="mb-3">
+                                    <label class="form-label" for="frequency">نوع چک‌لیست</label>
+                                    <select class="form-select" id="frequency" name="frequency">
+                                        {% for frequency in checklist_frequencies %}
+                                            <option value="{{ frequency }}" {% if selected_frequency == frequency %}selected{% endif %}>
+                                                {{ checklist_frequency_labels[frequency] }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" id="checklist-shift-field">
+                                    <label class="form-label" for="item_shift">شیفت</label>
+                                    <select class="form-select" id="item_shift" name="shift">
+                                        {% for shift in checklist_shifts %}
+                                            <option value="{{ shift }}" {% if selected_shift == shift %}selected{% endif %}>{{ shift }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" id="weekly-day-field">
+                                    <label class="form-label" for="item_weekday">روز انجام در هفته</label>
+                                    <select class="form-select" id="item_weekday" name="weekday">
+                                        {% set form_weekday = selected_weekday or today_weekday %}
+                                        {% for weekday_code, weekday_label in checklist_weekdays %}
+                                            <option value="{{ weekday_code }}" {% if form_weekday == weekday_code %}selected{% endif %}>
+                                                {{ weekday_label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">برای هر بخش و هر روز/شیفت، یک برنامهٔ ثابت بسازید.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="items_text">موارد چک‌لیست</label>
+                                    <textarea
+                                        class="form-control"
+                                        id="items_text"
+                                        name="items_text"
+                                        rows="7"
+                                        required
+                                        placeholder="تعویض کیسه‌های زباله&#10;تی‌کشیدن راهرو&#10;جاروکشیدن اتاق‌ها"
+                                    ></textarea>
+                                    <div class="form-text">
+                                        هر خط به یک مورد جداگانه تبدیل می‌شود؛ بنابراین Enter باعث ثبت فرم نمی‌شود.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="item_description">توضیح مشترک، در صورت نیاز</label>
+                                    <textarea class="form-control" id="item_description" name="description" rows="2"
+                                              placeholder="مثلاً طبق دستورالعمل کنترل عفونت"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="sort_order">ترتیب شروع نمایش</label>
+                                    <input class="form-control" id="sort_order" name="sort_order" type="number" min="0" value="0">
+                                </div>
+
+                                <button class="btn btn-primary w-100" type="submit">
+                                    <i class="fa-solid fa-plus ms-1"></i>
+                                    افزودن موارد به چک‌لیست
+                                </button>
+                            </form>
+                            </div>
+                        </details>
+                    </div>
+
+                    <div class="col-xl-7">
+                        <details class="glass-panel h-100">
+                            <summary>
+                                <span>
+                                    <span class="glass-panel-title"><i class="fa-solid fa-list"></i>موارد فعال</span>
+                                    <span class="glass-panel-caption">فهرست برنامهٔ انتخاب‌شده و امکان ویرایش آن</span>
+                                </span>
+                            </summary>
+                            <div class="card page-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1">موارد فعال</h5>
+                                    <p class="text-muted small mb-0">
+                                        {{ selected_frequency_label }} ·
+                                        {% if selected_frequency == "daily" %}
+                                            شیفت {{ selected_shift }}
+                                        {% else %}
+                                            {{ selected_weekday_label }} · شیفت {{ selected_shift }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <span class="badge text-bg-secondary">{{ items|length }} مورد</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-modern align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>عنوان</th>
+                                            <th>برنامه</th>
+                                            <th>ترتیب</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in items %}
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-bold">{{ item.title }}</div>
+                                                    {% if item.description %}<small class="text-muted">{{ item.description }}</small>{% endif %}
+                                                </td>
+                                                <td class="text-nowrap">
+                                                    {% if item.frequency == "weekly" %}
+                                                        {{ checklist_weekday_labels.get(item.weekday, "-") }} · {{ item.shift }}
+                                                    {% else %}
+                                                        هر روز · {{ item.shift }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.sort_order }}</td>
+                                                <td class="text-nowrap">
+                                                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.edit_checklist_item', item_id=item.id) }}">ویرایش</a>
+                                                    <form class="d-inline" method="post" action="{{ url_for('main.delete_checklist_item', item_id=item.id) }}" onsubmit="return confirm('این مورد از چک‌لیست حذف شود؟');">
+                                                        <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% else %}
+                                            <tr><td colspan="4" class="text-center text-muted py-4">هنوز موردی برای این قسمت تعریف نشده است.</td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            {% endif %}
+
+            <details class="glass-panel mb-4">
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-chart-line"></i>مشاهده عملکرد {{ selected_frequency_label }}</span>
+                        <span class="glass-panel-caption">
+                            {{ selected_section.name }} ·
+                            {% if selected_frequency == "daily" %}
+                                شیفت {{ selected_shift }}
+                            {% else %}
+                                {{ selected_weekday_label }} · شیفت {{ selected_shift }}
+                            {% endif %}
+                        </span>
+                    </span>
+                </summary>
+                <div class="card page-card p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-1">
+                            <i class="fa-solid fa-chart-line ms-2 text-primary"></i>
+                            مشاهده عملکرد {{ selected_frequency_label }}
+                        </h5>
+                        <p class="text-muted mb-0">
+                            {{ selected_section.name }} ·
+                            {% if selected_frequency == "daily" %}
+                                شیفت {{ selected_shift }}
+                            {% else %}
+                                {{ selected_weekday_label }} · شیفت {{ selected_shift }}
+                            {% endif %}
+                            · {{ checklist_date_label }}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="fs-4 fw-bold text-primary">{{ checklist_stats.rate }}٪</div>
+                        <small class="text-muted">درصد انجام کل</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="rounded-4 p-3" style="background:#eef8f7;">
+                            <small class="text-muted">تعداد موارد</small>
+                            <div class="fs-4 fw-bold text-primary">{{ checklist_stats.items }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="rounded-4 p-3" style="background:#eff6ff;">
+                            <small class="text-muted">پرسنل بخش</small>
+                            <div class="fs-4 fw-bold text-primary">{{ checklist_stats.staff }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="rounded-4 p-3" style="background:#f0fdf4;">
+                            <small class="text-muted">تیک‌های ثبت‌شده</small>
+                            <div class="fs-4 fw-bold text-success">{{ checklist_stats.completed_checks }} از {{ checklist_stats.total_checks }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>پرسنل</th>
+                                <th>پیشرفت</th>
+                                <th>وضعیت</th>
+                                <th>آخرین ثبت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for observation in observations %}
+                                <tr>
+                                    <td class="fw-bold">{{ observation.staff.full_name }}</td>
+                                    <td style="min-width: 200px;">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span>{{ observation.rate }}٪</span>
+                                            <span class="text-muted">{{ observation.completed }}/{{ observation.total }}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar {% if observation.rate == 100 %}bg-success{% elif observation.rate == 0 %}bg-danger{% endif %}" style="width: {{ observation.rate }}%;"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if observation.rate == 100 %}
+                                            <span class="soft-badge soft-success">کامل</span>
+                                        {% elif observation.rate > 0 %}
+                                            <span class="soft-badge soft-warning">ناقص</span>
+                                        {% else %}
+                                            <span class="soft-badge soft-danger">شروع نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ observation.last_completed_at|jalali if observation.last_completed_at else "-" }}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="4" class="text-center text-muted py-4">پرسنلی برای این بخش ثبت نشده است.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </details>
+
+            <details class="glass-panel">
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-list-check"></i>جزئیات انجام هر مورد</span>
+                        <span class="glass-panel-caption">مشاهدهٔ افراد انجام‌دهنده و موارد باقی‌مانده</span>
+                    </span>
+                </summary>
+                <div class="card page-card p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fa-solid fa-list-check ms-2 text-primary"></i>
+                    جزئیات انجام هر مورد
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>مورد چک‌لیست</th>
+                                <th>انجام داده‌اند</th>
+                                <th>باقی‌مانده برای</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in item_observations %}
+                                <tr>
+                                    <td class="fw-bold">{{ row.item.title }}</td>
+                                    <td>
+                                        {% for name in row.completed_by %}
+                                            <span class="soft-badge soft-success mb-1">{{ name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">هنوز کسی ثبت نکرده است.</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for name in row.pending_by %}
+                                            <span class="soft-badge soft-danger mb-1">{{ name }}</span>
+                                        {% else %}
+                                            <span class="soft-badge soft-success">همه انجام داده‌اند</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">موردی برای نمایش وجود ندارد.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </details>
+
+            <details class="glass-panel mt-4" {% if review_completions %}open{% endif %}>
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-clipboard-check"></i>بازبینی ثبت‌های چک‌لیست</span>
+                    <span class="glass-panel-caption">{% if current_user.role == "observer" %}وضعیت ثبت‌های پرسنل را در همهٔ بخش‌ها مشاهده کنید{% else %}ثبت‌های پرسنل را تأیید کنید یا برای اصلاح برگردانید{% endif %}</span>
+                    </span>
+                    {% if review_completions %}
+                        <span class="soft-badge soft-warning">{{ review_completions|length }} ثبت</span>
+                    {% endif %}
+                </summary>
+                <div class="card page-card p-4">
+                    <div class="table-responsive">
+                        <table class="table table-modern align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>پرسنل</th>
+                                    <th>مورد</th>
+                                    <th>ثبت و توضیح</th>
+                                    <th>وضعیت</th>
+                                    {% if current_user.role in ("manager", "supervisor") %}<th>عملیات</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for completion in review_completions %}
+                                    <tr class="{% if completion.status == 'needs_correction' %}table-danger{% elif completion.status == 'approved' %}table-violet{% endif %}">
+                                        <td class="fw-bold">{{ completion.user.full_name if completion.user else "-" }}</td>
+                                        <td>
+                                            {{ completion.item.title }}
+                                            <small class="d-block text-muted">{{ completion.item.section.name }} · {{ completion.shift }}</small>
+                                        </td>
+                                        <td style="min-width:220px;">
+                                            {{ completion.note or "-" }}
+                                            {% if completion.image_file %}
+                                                <a class="btn btn-sm btn-outline-secondary d-block mt-2" target="_blank" href="{{ url_for('main.uploaded_file', filename=completion.image_file) }}">
+                                                    <i class="fa-solid fa-image ms-1"></i>مشاهده تصویر
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if completion.status == "approved" %}
+                                                <span class="soft-badge soft-purple">تأیید شده</span>
+                                            {% elif completion.status == "needs_correction" %}
+                                                <span class="soft-badge soft-danger">نیازمند اصلاح</span>
+                                                {% if completion.review_note %}<small class="d-block text-danger mt-1">{{ completion.review_note }}</small>{% endif %}
+                                            {% else %}
+                                                <span class="soft-badge soft-warning">در انتظار بررسی</span>
+                                            {% endif %}
+                                        </td>
+                                        {% if current_user.role in ("manager", "supervisor") %}<td style="min-width:230px;">
+                                            <form method="post" action="{{ url_for('main.review_checklist_completion', completion_id=completion.id) }}">
+                                                <textarea class="form-control form-control-sm mb-2" name="review_note" rows="2" placeholder="توضیح اصلاح، در صورت نیاز">{{ completion.review_note or "" }}</textarea>
+                                                <div class="btn-group btn-group-sm w-100">
+                                                    <button class="btn btn-success" type="submit" name="status" value="approved"><i class="fa-solid fa-check ms-1"></i>تأیید</button>
+                                                    <button class="btn btn-danger" type="submit" name="status" value="needs_correction"><i class="fa-solid fa-rotate-left ms-1"></i>اصلاح</button>
+                                                </div>
+                                            </form>
+                                        </td>{% endif %}
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="{% if current_user.role in ('manager', 'supervisor') %}5{% else %}4{% endif %}" class="text-center text-muted py-4">ثبت جدیدی برای بازبینی وجود ندارد.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+
+            <details class="glass-panel mt-4" {% if handoffs %}open{% endif %}>
+                <summary>
+                    <span>
+                        <span class="glass-panel-title"><i class="fa-solid fa-right-left"></i>تحویل شیفت‌های بخش</span>
+                        <span class="glass-panel-caption">{% if current_user.role == "observer" %}یادداشت‌های تحویل شیفت در همهٔ بخش‌ها{% else %}یادداشت‌های تحویل شیفت را ببینید و تأیید مشاهده کنید{% endif %}</span>
+                    </span>
+                    {% if handoffs %}<span class="soft-badge soft-info">{{ handoffs|length }} یادداشت</span>{% endif %}
+                </summary>
+                <div class="card page-card p-4">
+                    <div class="table-responsive">
+                        <table class="table table-modern align-middle mb-0">
+                            <thead><tr><th>تاریخ و شیفت</th><th>بخش</th><th>پرسنل</th><th>یادداشت</th><th>وضعیت</th></tr></thead>
+                            <tbody>
+                                {% for handoff in handoffs %}
+                                    <tr class="{% if not handoff.is_acknowledged %}table-warning{% endif %}">
+                                        <td>{{ handoff.handoff_date|jalali }}<small class="d-block text-muted">{{ handoff.shift }}</small></td>
+                                        <td>{{ handoff.section.name }}</td>
+                                        <td>{{ handoff.user.full_name }}</td>
+                                        <td>{{ handoff.note }}</td>
+                                        <td>
+                                            {% if handoff.is_acknowledged %}
+                                                <span class="soft-badge soft-success">دیده شد</span>
+                                            {% elif current_user.role == "observer" %}
+                                                <span class="soft-badge soft-warning">در انتظار مشاهده</span>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('main.acknowledge_shift_handoff', handoff_id=handoff.id) }}">
+                                                    <button class="btn btn-sm btn-outline-primary" type="submit"><i class="fa-solid fa-eye ms-1"></i>ثبت مشاهده</button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="5" class="text-center text-muted py-4">یادداشت تحویل شیفت جدیدی وجود ندارد.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if current_user.role == "supervisor" %}
+<script>
+    (() => {
+        const frequency = document.getElementById("frequency");
+        const weeklyDayField = document.getElementById("weekly-day-field");
+        const itemShift = document.getElementById("item_shift");
+
+        if (!frequency || !weeklyDayField || !itemShift) {
+            return;
+        }
+
+        const syncChecklistFrequency = () => {
+            const isWeekly = frequency.value === "weekly";
+            weeklyDayField.classList.toggle("d-none", !isWeekly);
+            itemShift.disabled = false;
+        };
+
+        frequency.addEventListener("change", syncChecklistFrequency);
+        syncChecklistFrequency();
+    })();
+</script>
+{% endif %}
+{% endblock %}
